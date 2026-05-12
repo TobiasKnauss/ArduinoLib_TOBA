@@ -9,7 +9,7 @@
 #include <WOCO_DigitalPinMode.h>
 
 const uint8_t c_BufferDefaultValue = 0xDD;
-const uint16_t c_EepromOffset = 0;
+const uint16_t c_EepromAddr_StucConfig = 0;
 
 STUC* m_pSTUC = 0;
 WOCO* m_pWOCO = 0;  // Command
@@ -24,6 +24,7 @@ uint16_t  m_ReceiveBufferReadIndex  = 0;
 bool      m_DataAvailable           = false;
 bool      m_IsWorking               = false;
 StucData  m_RequestData;
+StucData* m_ReplyData   = 0;
 
 //--------------------------------------------------------------------
 void setup ()
@@ -48,7 +49,7 @@ void setup ()
   Serial << F("ReceiveBuffer     Addr=") << _HEX4((uint16_t)m_ReceiveBuffer)     << " Len=" << sizeof (m_ReceiveBuffer) << endl;
   Memory_PrintLn (m_ReceiveBuffer, sizeof (m_ReceiveBuffer));
 
-  m_pSTUC = new STUC (c_EepromOffset, result);
+  m_pSTUC = new STUC (c_EepromAddr_StucConfig, result);
   Serial << F("STUC.ctor() result=") << STUC::GetResultText (result) << endl;
 }
 
@@ -138,10 +139,11 @@ void loop ()
                                           m_RequestData.PayloadBufferLength,
                                           m_RequestData.PayloadLength);
           Serial << F("WOCO.AnalyzePayload() result=") << WOCO::GetResultText (result) << endl;
+          if (result != EResult::SUCCESS)
+            messageResult = STUC::EMessageResult::FAIL_PayloadProcessing;
         }
         else
-          messageResult = STUC::EMessageResult::FAIL_CommandIdNotSupported
-
+          messageResult = STUC::EMessageResult::FAIL_CommandNotSupported;
 
         if (result == EResult::SUCCESS)
         {
@@ -152,12 +154,12 @@ void loop ()
 
         if (result != EResult::SUCCESS)
         {
-          StucData replyData = StucData (m_RequestData.ActionIsWrite,
-                                         m_RequestData.RemoteDeviceId,
-                                         m_RequestData.MessageId,,
-                                         0,
-                                         m_RequestData.CommandId,
-                                         messageResult)
+          m_ReplyData = new StucData (m_RequestData.ActionIsWrite,
+                                      m_RequestData.RemoteDeviceId,
+                                      m_RequestData.MessageId,
+                                      0,
+                                      m_RequestData.CommandId,
+                                      messageResult);
         }
       }
       else
@@ -173,12 +175,12 @@ void loop ()
       STUC::EMessageResult messageResult = STUC::GetMessageResultForAnalysisResult (result);
       if (messageResult != STUC::EMessageResult::None)
       {
-        m_ReplyData = StucData (m_RequestData.ActionIsWrite,
-                                m_RequestData.RemoteDeviceId,
-                                m_RequestData.MessageId,
-                                m_RequestData.Timestamp,
-                                m_RequestData.CommandId,
-                                messageResult);
+        m_ReplyData = new StucData (m_RequestData.ActionIsWrite,
+                                    m_RequestData.RemoteDeviceId,
+                                    m_RequestData.MessageId,
+                                    0,
+                                    m_RequestData.CommandId,
+                                    messageResult);
       }
     }
 
@@ -199,14 +201,33 @@ void loop ()
     case WOCO::ECommand::DigitalPinMode:
       {
         WOCO_DigitalPinMode* pWOCO_DigitalPinMode = (WOCO_DigitalPinMode*)m_pWOCO;
-        pinMode (uint8_t pin, uint8_t mode)
-        pWOCO_DigitalPinMode->GetPinMode()
+        if (pWOCO_DigitalPinMode->GetActionIsWrite ())
+        {
+          pinMode (pWOCO_DigitalPinMode->GetPinNumber (),
+                   pWOCO_DigitalPinMode->GetPinMode ());
+          pWORE = WOCO_DigitalPinMode::CreateWriteReply ();
+        }
+        else
+        {
+          uint8_t currentPinMode = queryPinMode (pWOCO_DigitalPinMode->GetPinNumber ());
+          pWORE = WOCO_DigitalPinMode::CreateReadReply(pWOCO_DigitalPinMode->GetPinNumber (), currentPinMode);
+        }
       }
       break;
 
     case WOCO::ECommand::DigitalPinState:
       {
         WOCO_DigitalPinState* pWOCO_DigitalPinState = (WOCO_DigitalPinState*)m_pWOCO;
+        if (pWOCO_DigitalPinState->GetActionIsWrite ())
+        {
+          digitalWrite (pWOCO_DigitalPinState->GetPinNumber (),
+                        pWOCO_DigitalPinState->GetPinState ());
+        }
+        else
+        {
+          bool ioState = digitalRead (pWOCO_DigitalPinState->GetPinNumber ());
+          pWORE = WOCO_DigitalPinState::CreateReadReply (pWOCO_DigitalPinState->GetPinNumber (), ioState);
+        }
       }
       break;
 
