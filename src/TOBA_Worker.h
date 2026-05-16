@@ -26,11 +26,14 @@ public:
 
 //==================== Fields ====================
 protected:
-  UCOP*     m_pUCOP;
+  UCOP*     m_pUCOP = nullptr;  // Universal Communication Protocol
   UCOPData  m_RequestData;
   UCOPData  m_ReplyData;
-  WOCO*     m_pWOCO;  // WOrker COmmand
- // WOCO*     m_pWORE;  // WOrker REply
+  WOCO*     m_pWOCO = nullptr;  // WOrker COmmand
+
+  uint8_t* m_pPayloadRecvBuffer = nullptr;
+  uint8_t* m_pPayloadSendBuffer = nullptr;
+  uint16_t m_PayloadBuffersSize = 0;
 
 private:
   const uint8_t c_MinRecvSendBuffersSize        = 40;
@@ -46,21 +49,17 @@ private:
   #include "TOBA_EResult_failures.h"
   #undef X
 
-  uint8_t* m_pPayloadRecvBuffer;
-  uint8_t* m_pPayloadSendBuffer;
-  uint8_t* m_pReceiveBuffer;
-  uint8_t* m_pSendBuffer;
-  uint16_t m_ReceiveBufferSize  = 0;
+  uint8_t* m_pReceiveBuffer     = nullptr;
+  uint8_t* m_pSendBuffer        = nullptr;
   uint16_t m_SendBufferSize     = 0;
-  uint16_t m_PayloadBuffersSize = 0;
+  uint16_t m_ReceiveBufferSize  = 0;
 
   uint16_t m_ReceiveBufferWriteIndex = 0;
   uint16_t m_ReceiveBufferReadIndex  = 0;
 
-  Stream* m_pCommStream;
+  Stream* m_pCommStream = nullptr;
 
   bool m_DataAvailable = false;
-  bool m_IsWorking     = false;
 
 //==================== Constructors ====================
 public:
@@ -72,6 +71,10 @@ public:
 
 //==================== Properties ====================
 public:
+  //-------------------- instance --------------------
+
+  bool get_IsBusy ();
+
   bool get_IsWorking ();
 
 //==================== Public Methods ====================
@@ -85,6 +88,8 @@ public:
   ::EResult AnalyzeData ();
 
   ::EResult AnalyzeRequest ();
+
+  uint32_t GetTimestamp ();
 
   ::EResult ReadData ();
 

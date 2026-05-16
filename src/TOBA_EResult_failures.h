@@ -1,3 +1,6 @@
 X(FAIL_TOBA_CommStream_NotReady         )
-X(FAIL_TOBA_NoReplyAvailable            )
+X(FAIL_TOBA_ReplyMissing                )
+X(FAIL_TOBA_RequestMissing              )
+X(FAIL_TOBA_WorkerCommandMissing        )
 X(FAIL_TOBA_WorkerIsBusy                )
+X(FAIL_TOBA_WorkerIsWorking             )

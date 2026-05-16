@@ -26,22 +26,22 @@ TOBAWO_CustomIO::TOBAWO_CustomIO (Stream*    i_CommStream,
 {
   ::EResult result = ::EResult::InProgress;
 
-  WOCO* pWORE = 0;  // Reply
-  switch (m_pWOCO->GetCommand ())
+  WOCO* pWORE = nullptr;  // WOrker REply
+  switch (m_pWOCO->get_Command ())
   {
   case WOCO::ECommand::DigitalPinMode:
     {
       WOCO_DigitalPinMode* pWOCO_DigitalPinMode = (WOCO_DigitalPinMode*)m_pWOCO;
-      if (pWOCO_DigitalPinMode->GetActionIsWrite ())
+      if (pWOCO_DigitalPinMode->get_ActionIsWrite ())
       {
-        pinMode (pWOCO_DigitalPinMode->GetPinNumber (),
-                  pWOCO_DigitalPinMode->GetPinMode ());
+        pinMode (pWOCO_DigitalPinMode->get_PinNumber (),
+                  pWOCO_DigitalPinMode->get_PinMode ());
         pWORE = WOCO_DigitalPinMode::CreateWriteReply ();
       }
       else
       {
-        uint8_t currentPinMode = getPinMode (pWOCO_DigitalPinMode->GetPinNumber ());
-        pWORE = WOCO_DigitalPinMode::CreateReadReply(pWOCO_DigitalPinMode->GetPinNumber (), currentPinMode);
+        uint8_t currentPinMode = getPinMode (pWOCO_DigitalPinMode->get_PinNumber ());
+        pWORE = WOCO_DigitalPinMode::CreateReadReply(pWOCO_DigitalPinMode->get_PinNumber (), currentPinMode);
       }
     }
     break;
@@ -49,15 +49,16 @@ TOBAWO_CustomIO::TOBAWO_CustomIO (Stream*    i_CommStream,
   case WOCO::ECommand::DigitalPinState:
     {
       WOCO_DigitalPinState* pWOCO_DigitalPinState = (WOCO_DigitalPinState*)m_pWOCO;
-      if (pWOCO_DigitalPinState->GetActionIsWrite ())
+      if (pWOCO_DigitalPinState->get_ActionIsWrite ())
       {
-        digitalWrite (pWOCO_DigitalPinState->GetPinNumber (),
-                      pWOCO_DigitalPinState->GetPinState ());
+        digitalWrite (pWOCO_DigitalPinState->get_PinNumber (),
+                      pWOCO_DigitalPinState->get_PinState ());
+        pWORE = WOCO_DigitalPinState::CreateWriteReply ();
       }
       else
       {
-        bool ioState = digitalRead (pWOCO_DigitalPinState->GetPinNumber ());
-        pWORE = WOCO_DigitalPinState::CreateReadReply (pWOCO_DigitalPinState->GetPinNumber (), ioState);
+        bool ioState = digitalRead (pWOCO_DigitalPinState->get_PinNumber ());
+        pWORE = WOCO_DigitalPinState::CreateReadReply (pWOCO_DigitalPinState->get_PinNumber (), ioState);
       }
     }
     break;
@@ -67,4 +68,27 @@ TOBAWO_CustomIO::TOBAWO_CustomIO (Stream*    i_CommStream,
     break;
   }
 
+  DeleteObject (m_pWOCO);
+
+  if (pWORE != nullptr)
+  {
+    m_ReplyData = UCOPData (m_RequestData.ActionIsWrite,
+                            m_RequestData.RemoteDeviceId,
+                            m_RequestData.MessageId,
+                            GetTimestamp (),
+                            m_RequestData.CommandId,
+                            UCOP::EMessageResult::SUCCESS);
+    m_ReplyData.SetPayloadInfo (m_pPayloadSendBuffer, m_PayloadBuffersSize);
+
+    result = pWORE->ComposeCommandData (m_ReplyData.pPayloadBuffer,
+                                        m_ReplyData.PayloadBufferLength,
+                                        m_ReplyData.PayloadLength);
+
+    DeleteObject (pWORE);
+  }
+
+  if (m_ReplyData.IsEmpty ())
+    return (::EResult)EResult::FAIL_TOBA_ReplyMissing;
+
+  return ::EResult::SUCCESS;
 }

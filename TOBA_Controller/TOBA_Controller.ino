@@ -1,8 +1,8 @@
 #include <Arduino.h>
 #include <Streaming.h>
 
-#include <STUC.h>
-#include <StucData.h>
+#include <UOCP.h>
+#include <UOCPData.h>
 #include <WOCO.h>
 #include "WOCO_AliveCheck.h"
 #include "WOCO_DigitalPinMode.h"
@@ -12,8 +12,8 @@ const uint8_t c_BufferDefaultValue = 0xDD;
 
 const uint16_t c_EepromOffset = 0;
 
-STUC* m_pSTUC = 0;
-WOCO* m_pWOCO = 0;
+UOCP* m_pUOCP = nullptr;
+WOCO* m_pWOCO = nullptr;
 
 uint8_t m_CommandBuffer[20];
 uint8_t m_PayloadSendBuffer[20];
@@ -21,14 +21,14 @@ uint8_t m_PayloadRecvBuffer[20];
 uint8_t m_SendBuffer[50];
 uint8_t m_ReceiveBuffer[80];
 
-STUC::EChecksumType m_ChecksumType = STUC::EChecksumType::CRC16;
+UOCP::EChecksumType m_ChecksumType = UOCP::EChecksumType::CRC16;
 
 uint8_t   m_CommandLength            = 0;
-uint8_t*  m_pCommandBufferCurrentPos = 0;
+uint8_t*  m_pCommandBufferCurrentPos = nullptr;
 uint16_t  m_ReceiveBufferWriteIndex  = 0;
 uint16_t  m_ReceiveBufferReadIndex   = 0;
 bool      m_DataAvailable            = false;
-StucData  m_RequestData;
+UOCPData  m_RequestData;
 
 //--------------------------------------------------------------------
 void setup ()
@@ -53,8 +53,8 @@ void setup ()
   Serial << F("ReceiveBuffer     Addr=") << _HEX4((uint16_t)m_ReceiveBuffer)     << " Len=" << sizeof (m_ReceiveBuffer) << endl;
   Memory_PrintLn (m_ReceiveBuffer, sizeof (m_ReceiveBuffer));
 
-  m_pSTUC = new STUC (c_EepromOffset, result);
-  Serial << F("STUC.ctor() result=") << STUC::GetResultText (result) << endl;
+  m_pUOCP = new UOCP (c_EepromOffset, result);
+  Serial << F("UOCP.ctor() result=") << UOCP::GetResultText (result) << endl;
 }
 
 //--------------------------------------------------------------------
@@ -127,7 +127,7 @@ void loop ()
     Serial << F("PayloadSendBuffer: bytes used = ") << payloadLength << endl;
     Memory_PrintLn (m_PayloadSendBuffer, sizeof (m_PayloadSendBuffer));
 
-    m_RequestData = StucData (m_pWOCO->GetActionIsWrite (),
+    m_RequestData = UOCPData (m_pWOCO->GetActionIsWrite (),
                               workerDeviceId,
                               (uint8_t)m_pWOCO->GetCommand ());
     m_RequestData.SetPayloadInfo (m_PayloadSendBuffer,
@@ -135,11 +135,11 @@ void loop ()
                                   payloadLength);
     uint16_t requestMessageLength = 0;
 
-    result = m_pSTUC->ComposeRequest (m_RequestData,
+    result = m_pUOCP->ComposeRequest (m_RequestData,
                                       m_SendBuffer,
                                       sizeof (m_SendBuffer),
                                       requestMessageLength);
-    Serial << F("STUC.ComposeRequest() result=") << STUC::GetResultText (result) << endl;
+    Serial << F("UOCP.ComposeRequest() result=") << UOCP::GetResultText (result) << endl;
 
     Serial << F("SendBuffer: bytes used = ") << requestMessageLength << endl;
     Memory_PrintLn (m_SendBuffer, sizeof (m_SendBuffer));
@@ -187,18 +187,18 @@ void loop ()
   {
     bool     receivedMessageTypeIsReply = false;
     uint8_t  receivedMessageLength      = 0;
-    StucData receivedData;
+    UOCPData receivedData;
     receivedData.SetPayloadInfo (m_PayloadRecvBuffer,
                                  sizeof (m_PayloadRecvBuffer));
 
-    // Analyse message in the received data
-    result = m_pSTUC->AnalyseMessage (m_ReceiveBuffer,
-                                      sizeof (m_ReceiveBuffer),
-                                      m_ReceiveBufferReadIndex,
-                                      receivedData,
-                                      receivedMessageTypeIsReply,
-                                      receivedMessageLength);
-    Serial << F("STUC.AnalyseMessage() result=") << STUC::GetResultText (result) << endl;
+    // Search message in the received data
+    result = m_pUCOP->SearchMessage (m_ReceiveBuffer,
+                                     sizeof (m_ReceiveBuffer),
+                                     m_ReceiveBufferReadIndex,
+                                     receivedData,
+                                     receivedMessageTypeIsReply,
+                                     receivedMessageLength);
+    Serial << F("UOCP.SearchMessage() result=") << UOCP::GetResultText (result) << endl;
 
     Serial << F("Message Type is Reply: ") << receivedMessageTypeIsReply          << endl;
     Serial << F("Action is Write:       ") << receivedData.ActionIsWrite          << endl;

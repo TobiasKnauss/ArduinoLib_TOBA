@@ -3,7 +3,7 @@
 
 #include "TOBA_Worker.h"
 
-TOBA_Worker* m_pTobaWorker = 0;
+TOBA_Worker* m_pTobaWorker = nullptr;
 
 
 //--------------------------------------------------------------------
