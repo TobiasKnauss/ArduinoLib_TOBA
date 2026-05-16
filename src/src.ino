@@ -24,9 +24,22 @@ void loop ()
 {
   EResult result;
 
+  result = m_pTobaWorker->ReadData ();
+  Serial.println (TOBA_Worker::GetResultText (result));
+
+  result = m_pTobaWorker->AnalyzeData ();
+  Serial.println (TOBA_Worker::GetResultText (result));
+
+  result = m_pTobaWorker->AnalyzeRequest ();
+  Serial.println (TOBA_Worker::GetResultText (result));
+  
+  result = m_pTobaWorker->Work ();
+  Serial.println (TOBA_Worker::GetResultText (result));
+
+  result = m_pTobaWorker->SendReply ();
+  Serial.println (TOBA_Worker::GetResultText (result));
 
 
-
-    Serial.println ("Idle.");
-    delay (1000);
+  Serial.println ("Idle.");
+  delay (1000);
 }

@@ -9,6 +9,8 @@ class TOBAWO_CustomIO
 {
 //==================== Constructors ====================
 public:
+  //-------------------- instance --------------------
+
   TOBAWO_CustomIO (Stream*    i_CommStream,
                    uint16_t   i_ReceiveBufferSize,
                    uint16_t   i_SendBufferSize,
@@ -17,8 +19,9 @@ public:
 
 //==================== Public Methods ====================
 public:
-  virtual ::EResult Work () override;
+  //-------------------- instance --------------------
 
+  virtual ::EResult Work () override;
 };
 
 #endif

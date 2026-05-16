@@ -26,6 +26,8 @@ public:
 
 //==================== Fields ====================
 protected:
+  //-------------------- instance --------------------
+
   UCOP*     m_pUCOP = nullptr;  // Universal Communication Protocol
   UCOPData  m_RequestData;
   UCOPData  m_ReplyData;
@@ -36,18 +38,22 @@ protected:
   uint16_t m_PayloadBuffersSize = 0;
 
 private:
-  const uint8_t c_MinRecvSendBuffersSize        = 40;
-  const uint8_t c_MinPayloadRecvSendBuffersSize = 10;
+  //-------------------- static --------------------
 
-  const uint16_t c_EepromAddr_WorkerConfig = 0;
-  const uint16_t c_EepromAddr_UcopConfig = 10;
-  const uint8_t c_BufferDefaultValue = 0xFF;
+  static const uint8_t c_MinRecvSendBuffersSize        = 40;
+  static const uint8_t c_MinPayloadRecvSendBuffersSize = 10;
+
+  static const uint16_t c_EepromAddr_WorkerConfig = 0;
+  static const uint16_t c_EepromAddr_UcopConfig = 10;
+  static const uint8_t c_BufferDefaultValue = 0xFF;
 
   static const char* const c_EResult_ClassFailures_Names[] PROGMEM;
 
   #define X(name) static const char _EResult_##name[] PROGMEM;
   #include "TOBA_EResult_failures.h"
   #undef X
+
+  //-------------------- instance --------------------
 
   uint8_t* m_pReceiveBuffer     = nullptr;
   uint8_t* m_pSendBuffer        = nullptr;
@@ -63,6 +69,8 @@ private:
 
 //==================== Constructors ====================
 public:
+  //-------------------- instance --------------------
+
   TOBA_Worker (Stream*    i_pCommStream,
                uint16_t   i_ReceiveBufferSize,
                uint16_t   i_SendBufferSize,
@@ -72,6 +80,8 @@ public:
 //==================== Properties ====================
 public:
   //-------------------- instance --------------------
+
+  bool get_ExistsReply ();
 
   bool get_IsBusy ();
 
@@ -97,11 +107,8 @@ public:
 
   virtual ::EResult Work ();
 
-//==================== Public Methods ====================
+//==================== Private Methods ====================
 private:
-  //-------------------- instance --------------------
-
-  void ClearReceiveBuffer ();
 };
 
 #endif

@@ -1,4 +1,5 @@
 #include "TOBAWO_CustomIO.h"
+#include "TOBA_defines.h"
 
 #include <WOCO.h>
 #include <WOCO_DigitalPinState.h>
@@ -24,7 +25,14 @@ TOBAWO_CustomIO::TOBAWO_CustomIO (Stream*    i_CommStream,
 //--------------------------------------------------------------------
 ::EResult TOBAWO_CustomIO::Work ()
 {
-  ::EResult result = ::EResult::InProgress;
+  ::EResult result = TOBA_Worker::Work ();
+  if (result != ::EResult::InProgress)
+  {
+    DeleteObject (m_pWOCO);
+    return result;
+  }
+
+  UCOP::EMessageResult messageResult = UCOP::EMessageResult::InProgress;
 
   WOCO* pWORE = nullptr;  // WOrker REply
   switch (m_pWOCO->get_Command ())
@@ -43,6 +51,7 @@ TOBAWO_CustomIO::TOBAWO_CustomIO (Stream*    i_CommStream,
         uint8_t currentPinMode = getPinMode (pWOCO_DigitalPinMode->get_PinNumber ());
         pWORE = WOCO_DigitalPinMode::CreateReadReply(pWOCO_DigitalPinMode->get_PinNumber (), currentPinMode);
       }
+      messageResult = UCOP::EMessageResult::SUCCESS;
     }
     break;
 
@@ -60,11 +69,12 @@ TOBAWO_CustomIO::TOBAWO_CustomIO (Stream*    i_CommStream,
         bool ioState = digitalRead (pWOCO_DigitalPinState->get_PinNumber ());
         pWORE = WOCO_DigitalPinState::CreateReadReply (pWOCO_DigitalPinState->get_PinNumber (), ioState);
       }
+      messageResult = UCOP::EMessageResult::SUCCESS;
     }
     break;
 
   default:
-    result = TOBA_Worker::Work ();
+    m_ReplyData = UCOPData::Create_CommandNotSupported (m_RequestData, GetTimestamp ());
     break;
   }
 
@@ -77,7 +87,7 @@ TOBAWO_CustomIO::TOBAWO_CustomIO (Stream*    i_CommStream,
                             m_RequestData.MessageId,
                             GetTimestamp (),
                             m_RequestData.CommandId,
-                            UCOP::EMessageResult::SUCCESS);
+                            messageResult);
     m_ReplyData.SetPayloadInfo (m_pPayloadSendBuffer, m_PayloadBuffersSize);
 
     result = pWORE->ComposeCommandData (m_ReplyData.pPayloadBuffer,
