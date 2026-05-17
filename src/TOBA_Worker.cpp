@@ -1,3 +1,4 @@
+#include <EEPROM.h>
 #include "TOBA_Worker.h"
 #include "TOBA_defines.h"
 
@@ -21,39 +22,71 @@ TOBA_Worker::TOBA_Worker (Stream*    i_pCommStream,
                           uint16_t   i_PayloadBuffersSize,
                           char*      i_pWorkerName,
                           uint8_t    i_WorkerNameLength,
+                          UCOP*      i_pUCOP,
                           ::EResult& o_Result)
 {
-  if (i_pCommStream == nullptr
-  ||  i_pWorkerName == nullptr)
-  {
-    o_Result = ::EResult::FAIL_Pointer_IsZero;
+  o_Result = CommonConstructor_Ext (i_pCommStream);
+  if (o_Result != ::EResult::SUCCESS)
     return;
-  }
+
+  o_Result = CommonConstructor_Cfg (i_ReceiveBufferSize,
+                                    i_SendBufferSize,
+                                    i_PayloadBuffersSize,
+                                    i_pWorkerName,
+                                    i_WorkerNameLength,
+                                    i_pUCOP);
+  if (o_Result != ::EResult::SUCCESS)
+    return;
+}
+
+//--------------------------------------------------------------------
+TOBA_Worker::TOBA_Worker (Stream*    i_pCommStream,
+                          uint16_t   i_EepromAddress,
+                          ::EResult& o_Result)
+{
+  o_Result = CommonConstructor_Ext (i_pCommStream);
+  if (o_Result != ::EResult::SUCCESS)
+    return;
+
+  o_Result = ReadConfigFromEEPROM (i_EepromAddress);
+}
+
+//--------------------------------------------------------------------
+::EResult TOBA_Worker::CommonConstructor_Ext (Stream* i_pCommStream)
+{
+  if (i_pCommStream == nullptr)
+    return ::EResult::FAIL_Pointer_IsZero;
+
+  m_pCommStream = i_pCommStream;
+
+  return ::EResult::SUCCESS;
+}
+
+//--------------------------------------------------------------------
+::EResult TOBA_Worker::CommonConstructor_Cfg (uint16_t i_ReceiveBufferSize,
+                                              uint16_t i_SendBufferSize,
+                                              uint16_t i_PayloadBuffersSize,
+                                              char*    i_pWorkerName,
+                                              uint8_t  i_WorkerNameLength,
+                                              UCOP*    i_pUCOP)
+{
+  if (i_pWorkerName == nullptr
+  ||  i_pUCOP       == nullptr)
+    return ::EResult::FAIL_Pointer_IsZero;
+
   if (i_ReceiveBufferSize  < c_MinRecvSendBuffersSize
   ||  i_SendBufferSize     < c_MinRecvSendBuffersSize
   ||  i_PayloadBuffersSize < c_MinPayloadRecvSendBuffersSize)
-  {
-    o_Result = ::EResult::FAIL_Buffer_TooSmall;
-    return;
-  }
+    return ::EResult::FAIL_Buffer_TooSmall;
 
   m_ReceiveBufferSize  = i_ReceiveBufferSize;
   m_SendBufferSize     = i_SendBufferSize;
   m_PayloadBuffersSize = i_PayloadBuffersSize;
 
-  m_pReceiveBuffer     = new uint8_t[m_ReceiveBufferSize];
-  m_pSendBuffer        = new uint8_t[m_SendBufferSize];
-  m_pPayloadRecvBuffer = new uint8_t[m_PayloadBuffersSize];
-  m_pPayloadSendBuffer = new uint8_t[m_PayloadBuffersSize];
-
-  memset (m_pPayloadSendBuffer, c_BufferDefaultValue, m_PayloadBuffersSize);
-  memset (m_pPayloadRecvBuffer, c_BufferDefaultValue, m_PayloadBuffersSize);
-  memset (m_pSendBuffer       , c_BufferDefaultValue, m_SendBufferSize);
-  memset (m_pReceiveBuffer    , c_BufferDefaultValue, m_ReceiveBufferSize);
-
-  memset (m_WorkerName, 0x00, sizeof (m_WorkerName));
-  if (i_pWorkerName != nullptr)
-    memcpy (m_WorkerName, i_pWorkerName, min (sizeof (m_WorkerName) - 1, i_WorkerNameLength));
+  if (!Memory_Allocate (m_pReceiveBuffer    , m_ReceiveBufferSize , c_BufferDefaultValue)) return ::EResult::FAIL_Buffer_Create;
+  if (!Memory_Allocate (m_pSendBuffer       , m_SendBufferSize    , c_BufferDefaultValue)) return ::EResult::FAIL_Buffer_Create;
+  if (!Memory_Allocate (m_pPayloadRecvBuffer, m_PayloadBuffersSize, c_BufferDefaultValue)) return ::EResult::FAIL_Buffer_Create;
+  if (!Memory_Allocate (m_pPayloadSendBuffer, m_PayloadBuffersSize, c_BufferDefaultValue)) return ::EResult::FAIL_Buffer_Create;
 
   #ifdef TOBA_DEBUG
   Serial << F("ReceiveBuffer     Addr=") << _HEX4((uint16_t)m_pReceiveBuffer)     << " Len=" << m_ReceiveBufferSize << endl;
@@ -66,15 +99,31 @@ TOBA_Worker::TOBA_Worker (Stream*    i_pCommStream,
   Memory_PrintLn (m_pPayloadSendBuffer, m_PayloadBuffersSize);
   #endif
 
-  m_pCommStream = i_pCommStream;
+  memset (m_WorkerName, 0x00, sizeof (m_WorkerName));
+  if (i_pWorkerName != nullptr)
+    memcpy (m_WorkerName, i_pWorkerName, min (sizeof (m_WorkerName) - 1, i_WorkerNameLength));
 
-  m_pUCOP = new UCOP (c_EepromAddr_UcopConfig, o_Result);
-  if (o_Result != ::EResult::SUCCESS)
+  m_pUCOP = i_pUCOP;
+
+  return ::EResult::SUCCESS;
+}
+
+//--------------------------------------------------------------------
+TOBA_Worker::~TOBA_Worker ()
+{
+  if (m_NeedToDeleteUCOP)
     DeleteObject (m_pUCOP);
 
-  #ifdef TOBA_DEBUG
-  Serial << F("UCOP.ctor() result=") << UCOP::GetResultText (o_Result) << endl;
-  #endif
+  DeleteObject (m_pReceiveBuffer);
+  DeleteObject (m_pSendBuffer);
+  DeleteObject (m_pPayloadRecvBuffer);
+  DeleteObject (m_pPayloadSendBuffer);
+}
+
+//--------------------------------------------------------------------
+uint16_t TOBA_Worker::get_EepromAddress ()
+{
+  return m_EepromAddress;
 }
 
 //--------------------------------------------------------------------
@@ -401,6 +450,86 @@ uint32_t TOBA_Worker::GetTimestamp ()
 
   DeleteObject (m_pWOCO);
   DeleteObject (pWORE);
+
+  return result;
+}
+
+//--------------------------------------------------------------------
+::EResult TOBA_Worker::WriteConfigToEEPROM (uint16_t i_Address)
+{
+  if (c_EepromConfigTotalSize + i_Address > EEPROM.length ())
+    return ::EResult::FAIL_EEPROM_IndexOutsideRange;
+
+  EEPROM.put (i_Address +  0, m_ReceiveBufferSize);
+  EEPROM.put (i_Address +  2, m_SendBufferSize);
+  EEPROM.put (i_Address +  4, m_PayloadBuffersSize);
+  for (uint8_t index = 0; index < sizeof (m_WorkerName) - 1; index++)
+    EEPROM.write (i_Address + 6 + index, m_WorkerName[index]);
+  EEPROM.put (i_Address + 38, m_pUCOP == nullptr ? 0 : m_pUCOP->get_EepromAddress ());
+
+  uint8_t  byteValue = 0;
+  uint16_t checksum = m_Crc16.modbus (&byteValue, 1);
+  for (int index = 0; index < c_EepromConfigDataSize; index++)
+  {
+    byteValue = EEPROM.read (i_Address + index);
+    checksum = m_Crc16.modbus_upd (&byteValue, 1);
+  }
+  EEPROM.put (i_Address + 40, checksum);
+
+  return ::EResult::SUCCESS;
+}
+
+//--------------------------------------------------------------------
+::EResult TOBA_Worker::ReadConfigFromEEPROM (uint16_t i_Address)
+{
+  if (c_EepromConfigTotalSize + i_Address > EEPROM.length ())
+    return ::EResult::FAIL_EEPROM_IndexOutsideRange;
+
+  uint16_t receiveBufferSize;
+  uint16_t sendBufferSize;
+  uint16_t payloadBuffersSize;
+  char     workerName[sizeof (m_WorkerName)];
+  uint8_t  workerNameLength;
+  uint16_t eepromAddr_UcopConfig;
+  uint16_t configChecksumCRC16;
+
+  EEPROM.get (i_Address +  0, receiveBufferSize);
+  EEPROM.get (i_Address +  2, sendBufferSize);
+  EEPROM.get (i_Address +  4, payloadBuffersSize);
+  for (uint8_t index = 0; index < sizeof (workerName) - 1; index++)
+    workerName[index] = EEPROM.read (i_Address + 6 + index);
+  EEPROM.get (i_Address + 38, eepromAddr_UcopConfig);
+  EEPROM.get (i_Address + 40, configChecksumCRC16);
+  workerNameLength = (uint8_t)strlen (workerName);
+
+  uint8_t  byteValue = 0;
+  uint16_t checksum = m_Crc16.modbus (&byteValue, 1);
+  for (int index = 0; index < c_EepromConfigDataSize; index++)
+  {
+    byteValue = EEPROM.read (i_Address + index);
+    checksum = m_Crc16.modbus_upd (&byteValue, 1);
+  }
+  if (checksum != configChecksumCRC16)
+    return ::EResult::FAIL_Device_ConfigChecksumWrong;
+
+  ::EResult result;
+  UCOP* pUCOP = new UCOP (eepromAddr_UcopConfig, result);
+  m_NeedToDeleteUCOP = true;
+  #ifdef TOBA_DEBUG
+  Serial << F("UCOP.ctor() result=") << UCOP::GetResultText (result) << endl;
+  #endif
+  if (result != ::EResult::SUCCESS)
+  {
+    DeleteObject (pUCOP);
+    return result;
+  }
+
+  result = CommonConstructor_Cfg (receiveBufferSize,
+                                  sendBufferSize,
+                                  payloadBuffersSize,
+                                  workerName,
+                                  workerNameLength,
+                                  pUCOP);
 
   return result;
 }

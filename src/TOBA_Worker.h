@@ -1,6 +1,7 @@
 #ifndef TOBA_Worker_h
 #define TOBA_Worker_h
 
+#include <FastCRC.h>
 #include <Result.h>
 #include <MemoryTools.h>
 #include <UCOP.h>
@@ -49,11 +50,11 @@ protected:
 private:
   //-------------------- static --------------------
 
+  static const uint8_t c_EepromConfigDataSize          = 40;
+  static const uint8_t c_EepromConfigTotalSize         = 42;
   static const uint8_t c_MinRecvSendBuffersSize        = 40;
   static const uint8_t c_MinPayloadRecvSendBuffersSize = 10;
 
-  static const uint16_t c_EepromAddr_WorkerConfig = 0;
-  static const uint16_t c_EepromAddr_UcopConfig = 10;
   static const uint8_t c_BufferDefaultValue = 0xFF;
 
   static const char* const c_EResult_ClassFailures_Names[] PROGMEM;
@@ -69,8 +70,11 @@ private:
   uint16_t m_SendBufferSize     = 0;
   uint16_t m_ReceiveBufferSize  = 0;
 
-  char    m_WorkerName[32];
-  Stream* m_pCommStream = nullptr;
+  bool      m_NeedToDeleteUCOP  = false;
+  uint16_t  m_EepromAddress     = 0;
+  char      m_WorkerName[32];
+  Stream*   m_pCommStream = nullptr;
+  FastCRC16 m_Crc16;
 
   uint16_t m_ReceiveBufferWriteIndex = 0;
   uint16_t m_ReceiveBufferReadIndex  = 0;
@@ -80,17 +84,38 @@ private:
 public:
   //-------------------- instance --------------------
 
-  TOBA_Worker (Stream*    i_pCommStream,
-               uint16_t   i_ReceiveBufferSize,
-               uint16_t   i_SendBufferSize,
-               uint16_t   i_PayloadBuffersSize,
-               char*      i_pWorkerName,
-               uint8_t    i_WorkerNameLength,
-               ::EResult& o_Result);
+  TOBA_Worker ( Stream*    i_pCommStream,
+                uint16_t   i_ReceiveBufferSize,
+                uint16_t   i_SendBufferSize,
+                uint16_t   i_PayloadBuffersSize,
+                char*      i_pWorkerName,
+                uint8_t    i_WorkerNameLength,
+                UCOP*      i_pUCOP,
+                ::EResult& o_Result);
+
+  TOBA_Worker ( Stream*    i_pCommStream,
+                uint16_t   i_EepromAddress,
+                ::EResult& o_Result);
+
+  ~TOBA_Worker ();
+
+private:
+  //-------------------- instance --------------------
+
+  ::EResult CommonConstructor_Cfg ( uint16_t i_ReceiveBufferSize,
+                                    uint16_t i_SendBufferSize,
+                                    uint16_t i_PayloadBuffersSize,
+                                    char*    i_pWorkerName,
+                                    uint8_t  i_WorkerNameLength,
+                                    UCOP*    i_pUCOP);
+
+  ::EResult CommonConstructor_Ext (Stream* i_pCommStream);
 
 //==================== Properties ====================
 public:
   //-------------------- instance --------------------
+
+  uint16_t get_EepromAddress ();
 
   bool get_ExistsReply ();
 
@@ -123,8 +148,13 @@ public:
 
   virtual ::EResult Work ();
 
+  ::EResult WriteConfigToEEPROM (uint16_t i_Address);
+
 //==================== Private Methods ====================
 private:
+  //-------------------- instance --------------------
+
+  ::EResult ReadConfigFromEEPROM (uint16_t i_Address);
 };
 
 #endif

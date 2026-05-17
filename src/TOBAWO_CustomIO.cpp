@@ -7,20 +7,22 @@
 #include <IOHelper.h>
 
 //--------------------------------------------------------------------
-TOBAWO_CustomIO::TOBAWO_CustomIO (Stream*    i_CommStream,
+TOBAWO_CustomIO::TOBAWO_CustomIO (Stream*    i_pCommStream,
                                   uint16_t   i_ReceiveBufferSize,
                                   uint16_t   i_SendBufferSize,
                                   uint16_t   i_PayloadBuffersSize,
                                   char*      i_pWorkerName,
                                   uint8_t    i_WorkerNameLength,
+                                  UCOP*      i_pUCOP,
                                   ::EResult& o_Result)
-: TOBA_Worker (i_CommStream,
-               i_ReceiveBufferSize,
-               i_SendBufferSize,
-               i_PayloadBuffersSize,
-               i_pWorkerName,
-               i_WorkerNameLength,
-               o_Result)
+: TOBA_Worker ( i_pCommStream,
+                i_ReceiveBufferSize,
+                i_SendBufferSize,
+                i_PayloadBuffersSize,
+                i_pWorkerName,
+                i_WorkerNameLength,
+                i_pUCOP,
+                o_Result)
 {
   if (o_Result != ::EResult::SUCCESS)
     return;

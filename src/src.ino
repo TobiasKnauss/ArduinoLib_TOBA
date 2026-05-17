@@ -3,7 +3,11 @@
 
 #include "TOBA_Worker.h"
 
-TOBA_Worker* m_pTobaWorker = nullptr;
+const uint16_t c_EepromAddr_WorkerConfig = 0;
+const uint16_t c_EepromAddr_UcopConfig = 42;
+
+UCOP*         m_pUCOP       = nullptr;
+TOBA_Worker*  m_pTobaWorker = nullptr;
 
 
 //--------------------------------------------------------------------
@@ -15,7 +19,9 @@ void setup ()
   Serial1.begin (9600);
   delay (2000);
 
-  m_pTobaWorker = new TOBA_Worker (&Serial1, 80, 50, 20, "W1", 2, result);
+  m_pUCOP = new UCOP (true, true, false, 0x63691401, UCOP::EChecksumType::CRC8, result);
+  char workerName[] = "W1"; 
+  m_pTobaWorker = new TOBA_Worker (&Serial1, 80, 50, 20, workerName, strlen (workerName), m_pUCOP, result);
   
 }
 

@@ -11,13 +11,14 @@ class TOBAWO_CustomIO
 public:
   //-------------------- instance --------------------
 
-  TOBAWO_CustomIO (Stream*    i_CommStream,
-                   uint16_t   i_ReceiveBufferSize,
-                   uint16_t   i_SendBufferSize,
-                   uint16_t   i_PayloadBuffersSize,
-                   char*      i_pWorkerName,
-                   uint8_t    i_WorkerNameLength,
-                   ::EResult& o_Result);
+  TOBAWO_CustomIO ( Stream*    i_pCommStream,
+                    uint16_t   i_ReceiveBufferSize,
+                    uint16_t   i_SendBufferSize,
+                    uint16_t   i_PayloadBuffersSize,
+                    char*      i_pWorkerName,
+                    uint8_t    i_WorkerNameLength,
+                    UCOP*      i_pUCOP,
+                    ::EResult& o_Result);
 
 //==================== Properties ====================
 public:
