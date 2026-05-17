@@ -15,7 +15,15 @@ public:
                    uint16_t   i_ReceiveBufferSize,
                    uint16_t   i_SendBufferSize,
                    uint16_t   i_PayloadBuffersSize,
+                   char*      i_pWorkerName,
+                   uint8_t    i_WorkerNameLength,
                    ::EResult& o_Result);
+
+//==================== Properties ====================
+public:
+  //-------------------- instance --------------------
+
+  virtual EWorkerType get_WorkerType () override;
 
 //==================== Public Methods ====================
 public:

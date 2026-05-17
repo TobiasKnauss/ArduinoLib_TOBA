@@ -15,7 +15,7 @@ void setup ()
   Serial1.begin (9600);
   delay (2000);
 
-  m_pTobaWorker = new TOBA_Worker (&Serial1, 80, 50, 20, result);
+  m_pTobaWorker = new TOBA_Worker (&Serial1, 80, 50, 20, "W1", 2, result);
   
 }
 

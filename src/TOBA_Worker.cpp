@@ -19,9 +19,12 @@ TOBA_Worker::TOBA_Worker (Stream*    i_pCommStream,
                           uint16_t   i_ReceiveBufferSize,
                           uint16_t   i_SendBufferSize,
                           uint16_t   i_PayloadBuffersSize,
+                          char*      i_pWorkerName,
+                          uint8_t    i_WorkerNameLength,
                           ::EResult& o_Result)
 {
-  if (i_pCommStream == nullptr)
+  if (i_pCommStream == nullptr
+  ||  i_pWorkerName == nullptr)
   {
     o_Result = ::EResult::FAIL_Pointer_IsZero;
     return;
@@ -47,6 +50,10 @@ TOBA_Worker::TOBA_Worker (Stream*    i_pCommStream,
   memset (m_pPayloadRecvBuffer, c_BufferDefaultValue, m_PayloadBuffersSize);
   memset (m_pSendBuffer       , c_BufferDefaultValue, m_SendBufferSize);
   memset (m_pReceiveBuffer    , c_BufferDefaultValue, m_ReceiveBufferSize);
+
+  memset (m_WorkerName, 0x00, sizeof (m_WorkerName));
+  if (i_pWorkerName != nullptr)
+    memcpy (m_WorkerName, i_pWorkerName, min (sizeof (m_WorkerName) - 1, i_WorkerNameLength));
 
   #ifdef TOBA_DEBUG
   Serial << F("ReceiveBuffer     Addr=") << _HEX4((uint16_t)m_pReceiveBuffer)     << " Len=" << m_ReceiveBufferSize << endl;
@@ -88,6 +95,24 @@ bool TOBA_Worker::get_IsBusy ()
 bool TOBA_Worker::get_IsWorking ()
 {
   return m_pWOCO != nullptr;
+}
+
+//--------------------------------------------------------------------
+char* TOBA_Worker::get_WorkerName ()
+{
+  return m_WorkerName;
+}
+
+//--------------------------------------------------------------------
+uint8_t TOBA_Worker::get_WorkerNameLength ()
+{
+  return strlen (m_WorkerName);
+}
+
+//--------------------------------------------------------------------
+TOBA_Worker::EWorkerType TOBA_Worker::get_WorkerType ()
+{
+  return EWorkerType::BuiltIn_Basic;
 }
 
 //--------------------------------------------------------------------
@@ -344,11 +369,11 @@ uint32_t TOBA_Worker::GetTimestamp ()
   switch (m_pWOCO->get_Command ())
   {
   case WOCO::ECommand::WorkerType:
-    // pWORE = WOCO_WorkerType::CreateReadReply ();
+    pWORE = WOCO_WorkerType::CreateReadReply ((uint32_t)get_WorkerType ());
     break;
 
   case WOCO::ECommand::WorkerName:
-    // pWORE = WOCO_WorkerName::CreateReadReply ();
+    pWORE = WOCO_WorkerName::CreateReadReply (get_WorkerName (), get_WorkerNameLength ());
     break;
 
   case WOCO::ECommand::AliveCheck:

@@ -7,6 +7,8 @@
 #include <UCOPData.h>
 #include <WOCO.h>
 #include <WOCO_AliveCheck.h>
+#include <WOCO_WorkerName.h>
+#include <WOCO_WorkerType.h>
 
 //--------------------------------------------------------------------
 // TOBA: TObi's Building Automation
@@ -22,6 +24,13 @@ public:
     #include "TOBA_EResult_failures.h"
     #undef X
     Dummy_LastClassFailure
+  };
+
+  enum class EWorkerType : uint32_t
+  {
+    None = 0,
+    BuiltIn_Basic = 0x0100,
+    BuiltIn_CustomIO = 0x0101,
   };
 
 //==================== Fields ====================
@@ -60,12 +69,12 @@ private:
   uint16_t m_SendBufferSize     = 0;
   uint16_t m_ReceiveBufferSize  = 0;
 
-  uint16_t m_ReceiveBufferWriteIndex = 0;
-  uint16_t m_ReceiveBufferReadIndex  = 0;
-
+  char    m_WorkerName[32];
   Stream* m_pCommStream = nullptr;
 
-  bool m_DataAvailable = false;
+  uint16_t m_ReceiveBufferWriteIndex = 0;
+  uint16_t m_ReceiveBufferReadIndex  = 0;
+  bool     m_DataAvailable           = false;
 
 //==================== Constructors ====================
 public:
@@ -75,6 +84,8 @@ public:
                uint16_t   i_ReceiveBufferSize,
                uint16_t   i_SendBufferSize,
                uint16_t   i_PayloadBuffersSize,
+               char*      i_pWorkerName,
+               uint8_t    i_WorkerNameLength,
                ::EResult& o_Result);
 
 //==================== Properties ====================
@@ -86,6 +97,11 @@ public:
   bool get_IsBusy ();
 
   bool get_IsWorking ();
+
+  char*   get_WorkerName ();
+  uint8_t get_WorkerNameLength ();
+
+  virtual EWorkerType get_WorkerType ();
 
 //==================== Public Methods ====================
 public:
