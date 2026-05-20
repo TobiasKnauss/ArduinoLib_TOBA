@@ -7,9 +7,8 @@
 #include <UCOP.h>
 #include <UCOPData.h>
 #include <WOCO.h>
-#include <WOCO_AliveCheck.h>
-#include <WOCO_WorkerName.h>
-#include <WOCO_WorkerType.h>
+
+class TOBAConfig_Worker;
 
 //--------------------------------------------------------------------
 // TOBA: TObi's Building Automation
@@ -30,8 +29,8 @@ public:
   enum class EWorkerType : uint32_t
   {
     None = 0,
-    BuiltIn_Basic = 0x0100,
-    BuiltIn_CustomIO = 0x0101,
+    BuiltIn_Basic    = 0x00000100,
+    BuiltIn_CustomIO = 0x00000101,
   };
 
 //==================== Fields ====================
@@ -50,11 +49,6 @@ protected:
 private:
   //-------------------- static --------------------
 
-  static const uint8_t c_EepromConfigDataSize          = 40;
-  static const uint8_t c_EepromConfigTotalSize         = 42;
-  static const uint8_t c_MinRecvSendBuffersSize        = 40;
-  static const uint8_t c_MinPayloadRecvSendBuffersSize = 10;
-
   static const uint8_t c_BufferDefaultValue = 0xFF;
 
   static const char* const c_EResult_ClassFailures_Names[] PROGMEM;
@@ -67,13 +61,9 @@ private:
 
   uint8_t* m_pReceiveBuffer     = nullptr;
   uint8_t* m_pSendBuffer        = nullptr;
-  uint16_t m_SendBufferSize     = 0;
-  uint16_t m_ReceiveBufferSize  = 0;
 
-  bool      m_NeedToDeleteUCOP  = false;
-  uint16_t  m_EepromAddress     = 0;
-  char      m_WorkerName[32];
   Stream*   m_pCommStream = nullptr;
+  bool      m_NeedToDeleteUCOP = false;
   FastCRC16 m_Crc16;
 
   uint16_t m_ReceiveBufferWriteIndex = 0;
@@ -84,38 +74,21 @@ private:
 public:
   //-------------------- instance --------------------
 
-  TOBA_Worker ( Stream*    i_pCommStream,
-                uint16_t   i_ReceiveBufferSize,
-                uint16_t   i_SendBufferSize,
-                uint16_t   i_PayloadBuffersSize,
-                char*      i_pWorkerName,
-                uint8_t    i_WorkerNameLength,
-                UCOP*      i_pUCOP,
-                ::EResult& o_Result);
-
-  TOBA_Worker ( Stream*    i_pCommStream,
-                uint16_t   i_EepromAddress,
-                ::EResult& o_Result);
+  TOBA_Worker ( Stream*             i_pCommStream,
+                UCOP*               i_pUCOP,
+                TOBAConfig_Worker*  i_pConfig,
+                ::EResult&          o_Result);
 
   ~TOBA_Worker ();
-
-private:
-  //-------------------- instance --------------------
-
-  ::EResult CommonConstructor_Cfg ( uint16_t i_ReceiveBufferSize,
-                                    uint16_t i_SendBufferSize,
-                                    uint16_t i_PayloadBuffersSize,
-                                    char*    i_pWorkerName,
-                                    uint8_t  i_WorkerNameLength,
-                                    UCOP*    i_pUCOP);
-
-  ::EResult CommonConstructor_Ext (Stream* i_pCommStream);
 
 //==================== Properties ====================
 public:
   //-------------------- instance --------------------
 
   uint16_t get_EepromAddress ();
+
+  virtual uint8_t get_EepromConfigDataSize ();
+  virtual uint8_t get_EepromConfigTotalSize ();
 
   bool get_ExistsReply ();
 
@@ -149,6 +122,12 @@ public:
   virtual ::EResult Work ();
 
   ::EResult WriteConfigToEEPROM (uint16_t i_Address);
+
+//==================== Protected Methods ====================
+private:
+  //-------------------- instance --------------------
+
+  virtual ::EResult WriteConfigToEEPROM_EXEC (uint16_t i_Address);
 
 //==================== Private Methods ====================
 private:

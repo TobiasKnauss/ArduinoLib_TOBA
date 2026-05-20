@@ -1,14 +1,14 @@
 #include <Arduino.h>
 #include <Streaming.h>
-
-#include "TOBA_Worker.h"
+#include <UCOP.h>
+#include <TOBA_Worker.h>
+#include <TOBAConfig_Worker.h>
 
 const uint16_t c_EepromAddr_WorkerConfig = 0;
 const uint16_t c_EepromAddr_UcopConfig = 42;
 
 UCOP*         m_pUCOP       = nullptr;
 TOBA_Worker*  m_pTobaWorker = nullptr;
-
 
 //--------------------------------------------------------------------
 void setup ()
@@ -22,7 +22,6 @@ void setup ()
   m_pUCOP = new UCOP (true, true, false, 0x63691401, UCOP::EChecksumType::CRC8, result);
   char workerName[] = "W1"; 
   m_pTobaWorker = new TOBA_Worker (&Serial1, 80, 50, 20, workerName, strlen (workerName), m_pUCOP, result);
-  
 }
 
 //--------------------------------------------------------------------

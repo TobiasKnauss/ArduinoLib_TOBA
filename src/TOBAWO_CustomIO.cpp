@@ -1,31 +1,31 @@
-#include "TOBAWO_CustomIO.h"
-#include "TOBA_defines.h"
-
-#include <WOCO.h>
 #include <WOCO_DigitalPinState.h>
 #include <WOCO_DigitalPinMode.h>
 #include <IOHelper.h>
 
+#include "TOBAWO_CustomIO.h"
+#include "TOBAConfig_CustomIO.h"
+#include "TOBA_defines.h"
+
 //--------------------------------------------------------------------
-TOBAWO_CustomIO::TOBAWO_CustomIO (Stream*    i_pCommStream,
-                                  uint16_t   i_ReceiveBufferSize,
-                                  uint16_t   i_SendBufferSize,
-                                  uint16_t   i_PayloadBuffersSize,
-                                  char*      i_pWorkerName,
-                                  uint8_t    i_WorkerNameLength,
-                                  UCOP*      i_pUCOP,
-                                  ::EResult& o_Result)
+TOBAWO_CustomIO::TOBAWO_CustomIO (Stream*             i_pCommStream,
+                                  UCOP*               i_pUCOP,
+                                  TOBAConfig_Worker*  i_pConfig,
+                                  ::EResult&          o_Result)
 : TOBA_Worker ( i_pCommStream,
-                i_ReceiveBufferSize,
-                i_SendBufferSize,
-                i_PayloadBuffersSize,
-                i_pWorkerName,
-                i_WorkerNameLength,
                 i_pUCOP,
+                i_pConfig,
                 o_Result)
 {
   if (o_Result != ::EResult::SUCCESS)
     return;
+  if (i_pConfig->get_WorkerType () != get_WorkerType ())
+  {
+    o_Result = ::EResult::FAIL_Device_ConfigTypeWrong;
+    return;
+  }
+
+  m_pConfig = (TOBAConfig_CustomIO*)i_pConfig;
+  m_pConfig->get();
 }
 
 //--------------------------------------------------------------------

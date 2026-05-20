@@ -1,4 +1,7 @@
-#include <EEPROM.h>
+#include <WOCO_AliveCheck.h>
+#include <WOCO_WorkerName.h>
+#include <WOCO_WorkerType.h>
+
 #include "TOBA_Worker.h"
 #include "TOBA_defines.h"
 
@@ -16,68 +19,23 @@ const char* const TOBA_Worker::c_EResult_ClassFailures_Names[] PROGMEM =
 #undef X
 
 //--------------------------------------------------------------------
-TOBA_Worker::TOBA_Worker (Stream*    i_pCommStream,
-                          uint16_t   i_ReceiveBufferSize,
-                          uint16_t   i_SendBufferSize,
-                          uint16_t   i_PayloadBuffersSize,
-                          char*      i_pWorkerName,
-                          uint8_t    i_WorkerNameLength,
-                          UCOP*      i_pUCOP,
-                          ::EResult& o_Result)
+TOBA_Worker::TOBA_Worker (Stream*             i_pCommStream,
+                          UCOP*               i_pUCOP,
+                          TOBAConfig_Worker*  i_pConfig,
+                          ::EResult&          o_Result)
 {
-  o_Result = CommonConstructor_Ext (i_pCommStream);
-  if (o_Result != ::EResult::SUCCESS)
+  if (i_pCommStream == nullptr
+  ||  i_pConfig     == nullptr)
+  {
+    o_Result = ::EResult::FAIL_Pointer_IsZero;
     return;
-
-  o_Result = CommonConstructor_Cfg (i_ReceiveBufferSize,
-                                    i_SendBufferSize,
-                                    i_PayloadBuffersSize,
-                                    i_pWorkerName,
-                                    i_WorkerNameLength,
-                                    i_pUCOP);
-  if (o_Result != ::EResult::SUCCESS)
-    return;
-}
-
-//--------------------------------------------------------------------
-TOBA_Worker::TOBA_Worker (Stream*    i_pCommStream,
-                          uint16_t   i_EepromAddress,
-                          ::EResult& o_Result)
-{
-  o_Result = CommonConstructor_Ext (i_pCommStream);
-  if (o_Result != ::EResult::SUCCESS)
-    return;
-
-  o_Result = ReadConfigFromEEPROM (i_EepromAddress);
-}
-
-//--------------------------------------------------------------------
-::EResult TOBA_Worker::CommonConstructor_Ext (Stream* i_pCommStream)
-{
-  if (i_pCommStream == nullptr)
-    return ::EResult::FAIL_Pointer_IsZero;
+  }
 
   m_pCommStream = i_pCommStream;
 
-  return ::EResult::SUCCESS;
-}
 
-//--------------------------------------------------------------------
-::EResult TOBA_Worker::CommonConstructor_Cfg (uint16_t i_ReceiveBufferSize,
-                                              uint16_t i_SendBufferSize,
-                                              uint16_t i_PayloadBuffersSize,
-                                              char*    i_pWorkerName,
-                                              uint8_t  i_WorkerNameLength,
-                                              UCOP*    i_pUCOP)
-{
-  if (i_pWorkerName == nullptr
-  ||  i_pUCOP       == nullptr)
-    return ::EResult::FAIL_Pointer_IsZero;
 
-  if (i_ReceiveBufferSize  < c_MinRecvSendBuffersSize
-  ||  i_SendBufferSize     < c_MinRecvSendBuffersSize
-  ||  i_PayloadBuffersSize < c_MinPayloadRecvSendBuffersSize)
-    return ::EResult::FAIL_Buffer_TooSmall;
+
 
   m_ReceiveBufferSize  = i_ReceiveBufferSize;
   m_SendBufferSize     = i_SendBufferSize;
@@ -118,12 +76,6 @@ TOBA_Worker::~TOBA_Worker ()
   DeleteObject (m_pSendBuffer);
   DeleteObject (m_pPayloadRecvBuffer);
   DeleteObject (m_pPayloadSendBuffer);
-}
-
-//--------------------------------------------------------------------
-uint16_t TOBA_Worker::get_EepromAddress ()
-{
-  return m_EepromAddress;
 }
 
 //--------------------------------------------------------------------
@@ -455,39 +407,8 @@ uint32_t TOBA_Worker::GetTimestamp ()
 }
 
 //--------------------------------------------------------------------
-::EResult TOBA_Worker::WriteConfigToEEPROM (uint16_t i_Address)
-{
-  if (c_EepromConfigTotalSize + i_Address > EEPROM.length ())
-    return ::EResult::FAIL_EEPROM_IndexOutsideRange;
-
-  EEPROM.put (i_Address +  0, m_ReceiveBufferSize);
-  EEPROM.put (i_Address +  2, m_SendBufferSize);
-  EEPROM.put (i_Address +  4, m_PayloadBuffersSize);
-  for (uint8_t index = 0; index < sizeof (m_WorkerName) - 1; index++)
-    EEPROM.write (i_Address + 6 + index, m_WorkerName[index]);
-  EEPROM.put (i_Address + 38, m_pUCOP == nullptr ? 0 : m_pUCOP->get_EepromAddress ());
-
-  uint8_t  byteValue = 0;
-  uint16_t checksum = m_Crc16.modbus (&byteValue, 1);
-  for (int index = 0; index < c_EepromConfigDataSize; index++)
-  {
-    byteValue = EEPROM.read (i_Address + index);
-    checksum = m_Crc16.modbus_upd (&byteValue, 1);
-  }
-  EEPROM.put (i_Address + 40, checksum);
-
-  return ::EResult::SUCCESS;
-}
-
-//--------------------------------------------------------------------
 ::EResult TOBA_Worker::ReadConfigFromEEPROM (uint16_t i_Address)
 {
-  if (c_EepromConfigTotalSize + i_Address > EEPROM.length ())
-    return ::EResult::FAIL_EEPROM_IndexOutsideRange;
-
-  uint16_t receiveBufferSize;
-  uint16_t sendBufferSize;
-  uint16_t payloadBuffersSize;
   char     workerName[sizeof (m_WorkerName)];
   uint8_t  workerNameLength;
   uint16_t eepromAddr_UcopConfig;
@@ -501,16 +422,6 @@ uint32_t TOBA_Worker::GetTimestamp ()
   EEPROM.get (i_Address + 38, eepromAddr_UcopConfig);
   EEPROM.get (i_Address + 40, configChecksumCRC16);
   workerNameLength = (uint8_t)strlen (workerName);
-
-  uint8_t  byteValue = 0;
-  uint16_t checksum = m_Crc16.modbus (&byteValue, 1);
-  for (int index = 0; index < c_EepromConfigDataSize; index++)
-  {
-    byteValue = EEPROM.read (i_Address + index);
-    checksum = m_Crc16.modbus_upd (&byteValue, 1);
-  }
-  if (checksum != configChecksumCRC16)
-    return ::EResult::FAIL_Device_ConfigChecksumWrong;
 
   ::EResult result;
   UCOP* pUCOP = new UCOP (eepromAddr_UcopConfig, result);

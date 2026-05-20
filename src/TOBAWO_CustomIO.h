@@ -3,22 +3,26 @@
 
 #include "TOBA_Worker.h"
 
+class TOBAConfig_CustomIO;
+
 //--------------------------------------------------------------------
 class TOBAWO_CustomIO
 : public TOBA_Worker
 {
+//==================== Fields ====================
+private:
+  //-------------------- instance --------------------
+
+  TOBAConfig_CustomIO* m_pConfig = nullptr;
+
 //==================== Constructors ====================
 public:
   //-------------------- instance --------------------
 
-  TOBAWO_CustomIO ( Stream*    i_pCommStream,
-                    uint16_t   i_ReceiveBufferSize,
-                    uint16_t   i_SendBufferSize,
-                    uint16_t   i_PayloadBuffersSize,
-                    char*      i_pWorkerName,
-                    uint8_t    i_WorkerNameLength,
-                    UCOP*      i_pUCOP,
-                    ::EResult& o_Result);
+  TOBAWO_CustomIO ( Stream*             i_pCommStream,
+                    UCOP*               i_pUCOP,
+                    TOBAConfig_Worker*  i_pConfig,
+                    ::EResult&          o_Result);
 
 //==================== Properties ====================
 public:
