@@ -1,13 +1,13 @@
-#ifndef TOBAConfig_Worker_h
-#define TOBAConfig_Worker_h
+#ifndef TOBAConfig_Basic_h
+#define TOBAConfig_Basic_h
 
 #include <Result.h>
 #include <MemoryTools_EEPROM.h>
 
-#include "TOBA_Worker.h"
+#include "TOBAWorker_Basic.h"
 
 //--------------------------------------------------------------------
-class TOBAConfig_Worker
+class TOBAConfig_Basic
 {
 //==================== Fields ====================
 private:
@@ -36,21 +36,21 @@ public:
                             char*               i_pWorkerName,
                             uint8_t             i_WorkerNameLength,
                             uint16_t            i_EepromAddress_UCOPConfig,
-                            TOBAConfig_Worker*& o_pConfig);
+                            TOBAConfig_Basic*&  o_pConfig);
 
   static ::EResult Create ( uint16_t            i_EepromAddress,
-                            TOBAConfig_Worker*& o_pConfig);
+                            TOBAConfig_Basic*&  o_pConfig);
 
   //-------------------- instance --------------------
 
-  TOBAConfig_Worker ();
+  TOBAConfig_Basic ();
 
-  virtual ~TOBAConfig_Worker ();
+  virtual ~TOBAConfig_Basic ();
 
 protected:
   //-------------------- instance --------------------
 
-  TOBAConfig_Worker ( uint16_t    i_ReceiveBufferSize,
+  TOBAConfig_Basic ( uint16_t    i_ReceiveBufferSize,
                       uint16_t    i_SendBufferSize,
                       uint16_t    i_PayloadBuffersSize,
                       char*       i_pWorkerName,
@@ -60,8 +60,8 @@ protected:
 private:
   //-------------------- static --------------------
 
-  static ::EResult CreateObject ( TOBA_Worker::EWorkerType  i_Type,
-                                  TOBAConfig_Worker*&       o_pConfig);
+  static ::EResult CreateObject ( TOBAWorker_Basic::EWorkerType i_Type,
+                                  TOBAConfig_Basic*&            o_pConfig);
 
 //==================== Properties ====================
 public:
@@ -70,35 +70,36 @@ public:
   virtual uint8_t get_EepromConfigDataSize ();
   uint8_t         get_EepromConfigChecksumSize ();
 
+  uint16_t get_EepromAddress_UCOPConfig ();
   uint16_t get_PayloadBuffersSize ();
   uint16_t get_ReceiveBufferSize ();
   uint16_t get_SendBufferSize ();
   char*    get_WorkerName ();
   uint8_t  get_WorkerNameLength ();
 
-  virtual TOBA_Worker::EWorkerType get_WorkerType ();
+  virtual TOBAWorker_Basic::EWorkerType get_WorkerType ();
 
 //==================== Public Methods ====================
 public:
   //-------------------- instance --------------------
 
-  ::EResult WriteConfigToEEPROM (uint16_t i_Address);
+  ::EResult WriteToEEPROM (uint16_t i_Address);
 
 //==================== Protected Methods ====================
 protected:
   //-------------------- instance --------------------
 
-  virtual ::EResult ReadConfigFromEEPROM_EXEC (uint16_t& io_Address);
+  virtual ::EResult ReadFromEEPROM_EXEC (uint16_t& io_Address);
 
-  virtual ::EResult VerifyConfig_EXEC ();
+  virtual ::EResult Verify_EXEC ();
 
-  virtual ::EResult WriteConfigToEEPROM_EXEC (uint16_t& io_Address);
+  virtual ::EResult WriteToEEPROM_EXEC (uint16_t& io_Address);
 
 //==================== Protected Methods ====================
 private:
   //-------------------- instance --------------------
 
-  ::EResult ReadConfigFromEEPROM_exec (uint16_t i_Address);
+  ::EResult ReadFromEEPROM_exec (uint16_t i_Address);
 };
 
 #endif

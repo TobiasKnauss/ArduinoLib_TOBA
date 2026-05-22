@@ -2,72 +2,64 @@
 #include <WOCO_WorkerName.h>
 #include <WOCO_WorkerType.h>
 
-#include "TOBA_Worker.h"
+#include "TOBAWorker_Basic.h"
+#include "TOBAConfig_Basic.h"
 #include "TOBA_defines.h"
 
 //--------------------------------------------------------------------
-#define X(name) const char TOBA_Worker::_EResult_##name[] PROGMEM = #name;
+#define X(name) const char TOBAWorker_Basic::_EResult_##name[] PROGMEM = #name;
 #include "TOBA_EResult_failures.h"
 #undef X
 
 //--------------------------------------------------------------------
 #define X(name) _EResult_##name,
-const char* const TOBA_Worker::c_EResult_ClassFailures_Names[] PROGMEM =
+const char* const TOBAWorker_Basic::c_EResult_ClassFailures_Names[] PROGMEM =
 {
   #include "TOBA_EResult_failures.h"
 };
 #undef X
 
 //--------------------------------------------------------------------
-TOBA_Worker::TOBA_Worker (Stream*             i_pCommStream,
-                          UCOP*               i_pUCOP,
-                          TOBAConfig_Worker*  i_pConfig,
-                          ::EResult&          o_Result)
+::EResult TOBAWorker_Basic::Create (Stream*             i_pCommStream,
+                                    UCOP*               i_pUCOP,
+                                    TOBAConfig_Basic*   i_pConfig,
+                                    TOBAWorker_Basic*&  o_pWorker)
 {
-  if (i_pCommStream == nullptr
-  ||  i_pConfig     == nullptr)
+  o_pWorker = nullptr;
+  TOBAWorker_Basic* pWorker = new TOBAWorker_Basic (i_pCommStream,
+                                          i_pUCOP,
+                                          i_pConfig);
+
+  ::EResult result = pWorker->Verify_EXEC ();
+  if (result != ::EResult::SUCCESS)
   {
-    o_Result = ::EResult::FAIL_Pointer_IsZero;
-    return;
+    delete pWorker;
+    return result;
   }
 
-  m_pCommStream = i_pCommStream;
+  result = pWorker->CreateDevices_EXEC ();
+  if (result != ::EResult::SUCCESS)
+  {
+    delete pWorker;
+    return result;
+  }
 
-
-
-
-
-  m_ReceiveBufferSize  = i_ReceiveBufferSize;
-  m_SendBufferSize     = i_SendBufferSize;
-  m_PayloadBuffersSize = i_PayloadBuffersSize;
-
-  if (!Memory_Allocate (m_pReceiveBuffer    , m_ReceiveBufferSize , c_BufferDefaultValue)) return ::EResult::FAIL_Buffer_Create;
-  if (!Memory_Allocate (m_pSendBuffer       , m_SendBufferSize    , c_BufferDefaultValue)) return ::EResult::FAIL_Buffer_Create;
-  if (!Memory_Allocate (m_pPayloadRecvBuffer, m_PayloadBuffersSize, c_BufferDefaultValue)) return ::EResult::FAIL_Buffer_Create;
-  if (!Memory_Allocate (m_pPayloadSendBuffer, m_PayloadBuffersSize, c_BufferDefaultValue)) return ::EResult::FAIL_Buffer_Create;
-
-  #ifdef TOBA_DEBUG
-  Serial << F("ReceiveBuffer     Addr=") << _HEX4((uint16_t)m_pReceiveBuffer)     << " Len=" << m_ReceiveBufferSize << endl;
-  Memory_PrintLn (m_pReceiveBuffer, m_ReceiveBufferSize);
-  Serial << F("SendBuffer        Addr=") << _HEX4((uint16_t)m_pSendBuffer)        << " Len=" << m_SendBufferSize << endl;
-  Memory_PrintLn (m_pSendBuffer, m_SendBufferSize);
-  Serial << F("PayloadRecvBuffer Addr=") << _HEX4((uint16_t)m_pPayloadRecvBuffer) << " Len=" << m_PayloadBuffersSize << endl;
-  Memory_PrintLn (m_pPayloadRecvBuffer, m_PayloadBuffersSize);
-  Serial << F("PayloadSendBuffer Addr=") << _HEX4((uint16_t)m_pPayloadSendBuffer) << " Len=" << m_PayloadBuffersSize << endl;
-  Memory_PrintLn (m_pPayloadSendBuffer, m_PayloadBuffersSize);
-  #endif
-
-  memset (m_WorkerName, 0x00, sizeof (m_WorkerName));
-  if (i_pWorkerName != nullptr)
-    memcpy (m_WorkerName, i_pWorkerName, min (sizeof (m_WorkerName) - 1, i_WorkerNameLength));
-
-  m_pUCOP = i_pUCOP;
-
+  o_pWorker = pWorker;
   return ::EResult::SUCCESS;
 }
 
 //--------------------------------------------------------------------
-TOBA_Worker::~TOBA_Worker ()
+TOBAWorker_Basic::TOBAWorker_Basic (Stream*           i_pCommStream,
+                                    UCOP*             i_pUCOP,
+                                    TOBAConfig_Basic* i_pConfig)
+{
+  m_pCommStream = i_pCommStream;
+  m_pUCOP       = i_pUCOP;
+  m_pConfig     = i_pConfig;
+}
+
+//--------------------------------------------------------------------
+TOBAWorker_Basic::~TOBAWorker_Basic ()
 {
   if (m_NeedToDeleteUCOP)
     DeleteObject (m_pUCOP);
@@ -79,45 +71,45 @@ TOBA_Worker::~TOBA_Worker ()
 }
 
 //--------------------------------------------------------------------
-bool TOBA_Worker::get_ExistsReply ()
+bool TOBAWorker_Basic::get_ExistsReply ()
 {
   return !m_ReplyData.IsEmpty ();
 }
 
 //--------------------------------------------------------------------
-bool TOBA_Worker::get_IsBusy ()
+bool TOBAWorker_Basic::get_IsBusy ()
 {
   return !m_RequestData.IsEmpty ()
-      || !m_ReplyData.IsEmpty ()
+      || !m_ReplyData  .IsEmpty ()
       || m_pWOCO != nullptr;
 }
 
 //--------------------------------------------------------------------
-bool TOBA_Worker::get_IsWorking ()
+bool TOBAWorker_Basic::get_IsWorking ()
 {
   return m_pWOCO != nullptr;
 }
 
 //--------------------------------------------------------------------
-char* TOBA_Worker::get_WorkerName ()
+char* TOBAWorker_Basic::get_WorkerName ()
 {
-  return m_WorkerName;
+  return m_pConfig->get_WorkerName ();
 }
 
 //--------------------------------------------------------------------
-uint8_t TOBA_Worker::get_WorkerNameLength ()
+uint8_t TOBAWorker_Basic::get_WorkerNameLength ()
 {
-  return strlen (m_WorkerName);
+  return m_pConfig->get_WorkerNameLength ();
 }
 
 //--------------------------------------------------------------------
-TOBA_Worker::EWorkerType TOBA_Worker::get_WorkerType ()
+TOBAWorker_Basic::EWorkerType TOBAWorker_Basic::get_WorkerType ()
 {
   return EWorkerType::BuiltIn_Basic;
 }
 
 //--------------------------------------------------------------------
-const __FlashStringHelper* TOBA_Worker::GetResultText (::EResult i_Result)
+const __FlashStringHelper* TOBAWorker_Basic::GetResultText (::EResult i_Result)
 {
   if ((uint16_t)i_Result < (uint16_t)EResult::Dummy_FirstClassFailure)
     return Result::GetText (i_Result);
@@ -125,7 +117,7 @@ const __FlashStringHelper* TOBA_Worker::GetResultText (::EResult i_Result)
 }
 
 //--------------------------------------------------------------------
-::EResult TOBA_Worker::AnalyzeData ()
+::EResult TOBAWorker_Basic::AnalyzeData ()
 {
   if (get_IsBusy ())
     return (::EResult)EResult::FAIL_TOBA_WorkerIsBusy;
@@ -143,7 +135,7 @@ const __FlashStringHelper* TOBA_Worker::GetResultText (::EResult i_Result)
   // Analyze message in the received data
   uint16_t receiveBufferReadIndexAtAnalyzeStart = m_ReceiveBufferReadIndex;
   result = m_pUCOP->SearchMessage (m_pReceiveBuffer,
-                                   m_ReceiveBufferSize,
+                                   m_pConfig->get_ReceiveBufferSize (),
                                    m_ReceiveBufferReadIndex,
                                    receivedData,
                                    receivedMessageTypeIsReply,
@@ -151,7 +143,7 @@ const __FlashStringHelper* TOBA_Worker::GetResultText (::EResult i_Result)
 
   // In the ring buffer, clear the part that contains the found message.
   RingBuffer_SetValue_StartToEnd (m_pReceiveBuffer,
-                                  m_ReceiveBufferSize,
+                                  m_pConfig->get_ReceiveBufferSize (),
                                   receiveBufferReadIndexAtAnalyzeStart,
                                   m_ReceiveBufferReadIndex,
                                   c_BufferDefaultValue);
@@ -170,7 +162,7 @@ const __FlashStringHelper* TOBA_Worker::GetResultText (::EResult i_Result)
   Serial << F("Message Length:        ") << receivedMessageLength               << endl;
 
   Serial << F("ReceiveBuffer:") << endl;
-  Memory_PrintLn (m_pReceiveBuffer, m_ReceiveBufferSize);
+  Memory_PrintLn (m_pReceiveBuffer, m_pConfig->get_ReceiveBufferSize ());
   Serial << F("PayloadRecvBuffer: bytes used = ") << receivedData.PayloadLength << endl;
   Memory_PrintLn (m_pPayloadRecvBuffer, m_PayloadBuffersSize);
   #endif
@@ -202,7 +194,7 @@ const __FlashStringHelper* TOBA_Worker::GetResultText (::EResult i_Result)
 
   if ((UCOP::EResult)result == UCOP::EResult::FAIL_UCOP_Message_NotFound)
   {
-    memset (m_pReceiveBuffer, c_BufferDefaultValue, m_ReceiveBufferSize);
+    memset (m_pReceiveBuffer, c_BufferDefaultValue, m_pConfig->get_ReceiveBufferSize ());
     m_DataAvailable = false;
     return ::EResult::SUCCESS;
   }
@@ -219,7 +211,7 @@ const __FlashStringHelper* TOBA_Worker::GetResultText (::EResult i_Result)
 }
 
 //--------------------------------------------------------------------
-::EResult TOBA_Worker::AnalyzeRequest ()
+::EResult TOBAWorker_Basic::AnalyzeRequest ()
 {
   if (m_RequestData.IsEmpty ())
     return (::EResult)EResult::FAIL_TOBA_RequestMissing;
@@ -289,13 +281,13 @@ const __FlashStringHelper* TOBA_Worker::GetResultText (::EResult i_Result)
 }
 
 //--------------------------------------------------------------------
-uint32_t TOBA_Worker::GetTimestamp ()
+uint32_t TOBAWorker_Basic::GetTimestamp ()
 {
   return 0;
 }
 
 //--------------------------------------------------------------------
-::EResult TOBA_Worker::ReadData ()
+::EResult TOBAWorker_Basic::ReadData ()
 {
   if (m_pCommStream == nullptr)
     return (::EResult)EResult::FAIL_TOBA_CommStream_NotReady;
@@ -310,13 +302,13 @@ uint32_t TOBA_Worker::GetTimestamp ()
   while (m_pCommStream->available ())
   {
     m_pReceiveBuffer[m_ReceiveBufferWriteIndex++] = m_pCommStream->read ();
-    if (m_ReceiveBufferWriteIndex >= m_ReceiveBufferSize)
+    if (m_ReceiveBufferWriteIndex >= m_pConfig->get_ReceiveBufferSize ())
       m_ReceiveBufferWriteIndex = 0;
   }
 
   #ifdef TOBA_DEBUG
   Serial << F("ReceiveBuffer: position = ") << m_ReceiveBufferWriteIndex << endl;
-  Memory_PrintLn (m_pReceiveBuffer, m_ReceiveBufferSize);
+  Memory_PrintLn (m_pReceiveBuffer, m_pConfig->get_ReceiveBufferSize ());
   #endif
 
   m_DataAvailable = true;
@@ -324,7 +316,7 @@ uint32_t TOBA_Worker::GetTimestamp ()
 }
 
 //--------------------------------------------------------------------
-::EResult TOBA_Worker::SendReply ()
+::EResult TOBAWorker_Basic::SendReply ()
 {
   if (m_pWOCO != nullptr)
     return (::EResult)EResult::FAIL_TOBA_WorkerIsWorking;
@@ -336,7 +328,7 @@ uint32_t TOBA_Worker::GetTimestamp ()
   uint16_t replyMessageLength = 0;
   ::EResult result = m_pUCOP->ComposeReply (m_ReplyData,
                                             m_pSendBuffer,
-                                            m_SendBufferSize,
+                                            m_pConfig->get_SendBufferSize (),
                                             replyMessageLength);
 
   memset (m_pPayloadSendBuffer, c_BufferDefaultValue, m_ReplyData.PayloadLength);
@@ -344,7 +336,7 @@ uint32_t TOBA_Worker::GetTimestamp ()
   #ifdef TOBA_DEBUG
   Serial << F("UCOP.ComposeReply() result=") << UCOP::GetResultText (result) << endl;
   Serial << F("SendBuffer: bytes used = ") << replyMessageLength << endl;
-  Memory_PrintLn (m_pSendBuffer, m_SendBufferSize);
+  Memory_PrintLn (m_pSendBuffer, m_pConfig->get_SendBufferSize ());
   #endif
 
   if (result == ::EResult::SUCCESS)
@@ -359,7 +351,7 @@ uint32_t TOBA_Worker::GetTimestamp ()
 }
 
 //--------------------------------------------------------------------
-::EResult TOBA_Worker::Work ()
+::EResult TOBAWorker_Basic::Work ()
 {
   if (!m_ReplyData.IsEmpty ())
     return (::EResult)EResult::FAIL_TOBA_WorkerIsBusy;
@@ -407,40 +399,53 @@ uint32_t TOBA_Worker::GetTimestamp ()
 }
 
 //--------------------------------------------------------------------
-::EResult TOBA_Worker::ReadConfigFromEEPROM (uint16_t i_Address)
+::EResult TOBAWorker_Basic::CreateDevices_EXEC ()
 {
-  char     workerName[sizeof (m_WorkerName)];
-  uint8_t  workerNameLength;
-  uint16_t eepromAddr_UcopConfig;
-  uint16_t configChecksumCRC16;
-
-  EEPROM.get (i_Address +  0, receiveBufferSize);
-  EEPROM.get (i_Address +  2, sendBufferSize);
-  EEPROM.get (i_Address +  4, payloadBuffersSize);
-  for (uint8_t index = 0; index < sizeof (workerName) - 1; index++)
-    workerName[index] = EEPROM.read (i_Address + 6 + index);
-  EEPROM.get (i_Address + 38, eepromAddr_UcopConfig);
-  EEPROM.get (i_Address + 40, configChecksumCRC16);
-  workerNameLength = (uint8_t)strlen (workerName);
-
   ::EResult result;
-  UCOP* pUCOP = new UCOP (eepromAddr_UcopConfig, result);
-  m_NeedToDeleteUCOP = true;
-  #ifdef TOBA_DEBUG
-  Serial << F("UCOP.ctor() result=") << UCOP::GetResultText (result) << endl;
-  #endif
-  if (result != ::EResult::SUCCESS)
+  if (m_pUCOP == nullptr)
   {
-    DeleteObject (pUCOP);
-    return result;
+    UCOP* pUCOP = new UCOP (m_pConfig->get_EepromAddress_UCOPConfig (), result);
+    #ifdef TOBA_DEBUG
+    Serial << F("UCOP.ctor() result=") << UCOP::GetResultText (result) << endl;
+    #endif
+    if (result != ::EResult::SUCCESS)
+    {
+      delete pUCOP;
+      return result;
+    }
+
+    m_NeedToDeleteUCOP = true;
+    m_pUCOP = pUCOP;
   }
 
-  result = CommonConstructor_Cfg (receiveBufferSize,
-                                  sendBufferSize,
-                                  payloadBuffersSize,
-                                  workerName,
-                                  workerNameLength,
-                                  pUCOP);
+  if (!Memory_Allocate (m_pReceiveBuffer    , m_pConfig->get_ReceiveBufferSize () , c_BufferDefaultValue)) return ::EResult::FAIL_Buffer_Create;
+  if (!Memory_Allocate (m_pSendBuffer       , m_pConfig->get_SendBufferSize ()    , c_BufferDefaultValue)) return ::EResult::FAIL_Buffer_Create;
+  if (!Memory_Allocate (m_pPayloadRecvBuffer, m_pConfig->get_PayloadBuffersSize (), c_BufferDefaultValue)) return ::EResult::FAIL_Buffer_Create;
+  if (!Memory_Allocate (m_pPayloadSendBuffer, m_pConfig->get_PayloadBuffersSize (), c_BufferDefaultValue)) return ::EResult::FAIL_Buffer_Create;
 
-  return result;
+  #ifdef TOBA_DEBUG
+  Serial << F("ReceiveBuffer     Addr=") << _HEX4((uint16_t)m_pReceiveBuffer)     << " Len=" << m_pConfig->get_ReceiveBufferSize () << endl;
+  Memory_PrintLn (m_pReceiveBuffer, m_pConfig->get_ReceiveBufferSize ());
+  Serial << F("SendBuffer        Addr=") << _HEX4((uint16_t)m_pSendBuffer)        << " Len=" << m_pConfig->get_SendBufferSize () << endl;
+  Memory_PrintLn (m_pSendBuffer, m_pConfig->get_SendBufferSize ());
+  Serial << F("PayloadRecvBuffer Addr=") << _HEX4((uint16_t)m_pPayloadRecvBuffer) << " Len=" << m_pConfig->get_PayloadBuffersSize () << endl;
+  Memory_PrintLn (m_pPayloadRecvBuffer, m_pConfig->get_PayloadBuffersSize ());
+  Serial << F("PayloadSendBuffer Addr=") << _HEX4((uint16_t)m_pPayloadSendBuffer) << " Len=" << m_pConfig->get_PayloadBuffersSize () << endl;
+  Memory_PrintLn (m_pPayloadSendBuffer, m_pConfig->get_PayloadBuffersSize ());
+  #endif
+
+  return ::EResult::SUCCESS;
+}
+
+//--------------------------------------------------------------------
+::EResult TOBAWorker_Basic::Verify_EXEC ()
+{
+  if (m_pCommStream == nullptr
+  ||  m_pConfig     == nullptr)
+    return ::EResult::FAIL_Pointer_IsZero;
+
+  if (m_pConfig->get_WorkerType () != get_WorkerType ())
+    return ::EResult::FAIL_Device_ConfigTypeWrong;
+
+  return ::EResult::SUCCESS;
 }

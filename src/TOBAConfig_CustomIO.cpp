@@ -20,10 +20,11 @@
                                                           i_EepromAddress_UCOPConfig,
                                                           i_IOCount,
                                                           i_pIOPins);
-  ::EResult result = pConfig->VerifyConfig_EXEC ();
+
+  ::EResult result = pConfig->Verify_EXEC ();
   if (result != ::EResult::SUCCESS)
   {
-    delete (pConfig);
+    delete pConfig;
     return result;
   }
 
@@ -39,24 +40,24 @@ TOBAConfig_CustomIO::TOBAConfig_CustomIO ()
 //--------------------------------------------------------------------
 TOBAConfig_CustomIO::~TOBAConfig_CustomIO ()
 {
-  delete m_pIOPins;
+  DeleteObject (m_pIOPins);
 }
 
 //--------------------------------------------------------------------
-TOBAConfig_CustomIO::TOBAConfig_CustomIO (uint16_t    i_ReceiveBufferSize,
-                                          uint16_t    i_SendBufferSize,
-                                          uint16_t    i_PayloadBuffersSize,
-                                          char*       i_pWorkerName,
-                                          uint8_t     i_WorkerNameLength,
-                                          uint16_t    i_EepromAddress_UCOPConfig,
-                                          uint8_t     i_IOCount,
-                                          uint8_t*    i_pIOPins)
-: TOBAConfig_Worker ( i_ReceiveBufferSize,
-                      i_SendBufferSize,
-                      i_PayloadBuffersSize,
-                      i_pWorkerName,
-                      i_WorkerNameLength,
-                      i_EepromAddress_UCOPConfig)
+TOBAConfig_CustomIO::TOBAConfig_CustomIO (uint16_t  i_ReceiveBufferSize,
+                                          uint16_t  i_SendBufferSize,
+                                          uint16_t  i_PayloadBuffersSize,
+                                          char*     i_pWorkerName,
+                                          uint8_t   i_WorkerNameLength,
+                                          uint16_t  i_EepromAddress_UCOPConfig,
+                                          uint8_t   i_IOCount,
+                                          uint8_t*  i_pIOPins)
+: TOBAConfig_Basic (i_ReceiveBufferSize,
+                    i_SendBufferSize,
+                    i_PayloadBuffersSize,
+                    i_pWorkerName,
+                    i_WorkerNameLength,
+                    i_EepromAddress_UCOPConfig)
 {
   m_IOCount = i_IOCount;
 
@@ -70,7 +71,7 @@ TOBAConfig_CustomIO::TOBAConfig_CustomIO (uint16_t    i_ReceiveBufferSize,
 //--------------------------------------------------------------------
 uint8_t TOBAConfig_CustomIO::get_EepromConfigDataSize ()
 {
-  return TOBAConfig_Worker::get_EepromConfigDataSize ()
+  return TOBAConfig_Basic::get_EepromConfigDataSize ()
        + 1
        + m_IOCount;
 }
@@ -88,15 +89,15 @@ uint8_t* TOBAConfig_CustomIO::get_IOPins ()
 }
 
 //--------------------------------------------------------------------
-TOBA_Worker::EWorkerType TOBAConfig_CustomIO::get_WorkerType ()
+TOBAWorker_Basic::EWorkerType TOBAConfig_CustomIO::get_WorkerType ()
 {
-  return EWorkerType::BuiltIn_CustomIO;
+  return TOBAWorker_Basic::EWorkerType::BuiltIn_CustomIO;
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAConfig_CustomIO::ReadConfigFromEEPROM_EXEC (uint16_t& io_Address)
+::EResult TOBAConfig_CustomIO::ReadFromEEPROM_EXEC (uint16_t& io_Address)
 {
-  ::EResult result = TOBAConfig_Worker::ReadConfigFromEEPROM_EXEC (io_Address);
+  ::EResult result = TOBAConfig_Basic::ReadFromEEPROM_EXEC (io_Address);
   if (result != ::EResult::SUCCESS)
     return result;
 
@@ -112,9 +113,9 @@ TOBA_Worker::EWorkerType TOBAConfig_CustomIO::get_WorkerType ()
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAConfig_CustomIO::VerifyConfig_EXEC ()
+::EResult TOBAConfig_CustomIO::Verify_EXEC ()
 {
-  ::EResult result = TOBAConfig_Worker::VerifyConfig_EXEC ();
+  ::EResult result = TOBAConfig_Basic::Verify_EXEC ();
   if (result != ::EResult::SUCCESS)
     return result;
 
@@ -125,9 +126,9 @@ TOBA_Worker::EWorkerType TOBAConfig_CustomIO::get_WorkerType ()
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAConfig_CustomIO::WriteConfigToEEPROM_EXEC (uint16_t& io_Address)
+::EResult TOBAConfig_CustomIO::WriteToEEPROM_EXEC (uint16_t& io_Address)
 {
-  ::EResult result = TOBAConfig_Worker::WriteConfigToEEPROM_EXEC (io_Address);
+  ::EResult result = TOBAConfig_Basic::WriteToEEPROM_EXEC (io_Address);
   if (result != ::EResult::SUCCESS)
     return result;
 

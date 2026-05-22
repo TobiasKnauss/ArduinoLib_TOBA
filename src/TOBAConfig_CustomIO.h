@@ -1,11 +1,11 @@
 #ifndef TOBAConfig_CustomIO_h
 #define TOBAConfig_CustomIO_h
 
-#include "TOBAConfig_Worker.h"
+#include "TOBAConfig_Basic.h"
 
 //--------------------------------------------------------------------
 class TOBAConfig_CustomIO
-: public TOBAConfig_Worker
+: public TOBAConfig_Basic
 {
 //==================== Fields ====================
 private:
@@ -55,17 +55,17 @@ public:
   uint8_t  get_IOCount ();
   uint8_t* get_IOPins ();
 
-  virtual TOBA_Worker::EWorkerType get_WorkerType () override;
+  virtual TOBAWorker_Basic::EWorkerType get_WorkerType () override;
 
 //==================== Protected Methods ====================
 protected:
   //-------------------- instance --------------------
 
-  virtual ::EResult ReadConfigFromEEPROM_EXEC (uint16_t& io_Address) override;
+  virtual ::EResult ReadFromEEPROM_EXEC (uint16_t& io_Address) override;
 
-  virtual ::EResult VerifyConfig_EXEC () override;
+  virtual ::EResult Verify_EXEC () override;
 
-  virtual ::EResult WriteConfigToEEPROM_EXEC (uint16_t& io_Address) override;
+  virtual ::EResult WriteToEEPROM_EXEC (uint16_t& io_Address) override;
 };
 
 #endif

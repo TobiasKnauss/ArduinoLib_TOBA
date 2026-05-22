@@ -1,19 +1,20 @@
-#ifndef TOBA_Worker_h
-#define TOBA_Worker_h
+#ifndef TOBAWorker_Basic_h
+#define TOBAWorker_Basic_h
 
 #include <FastCRC.h>
 #include <Result.h>
 #include <MemoryTools.h>
+#include <MemoryTools_RingBuffer.h>
 #include <UCOP.h>
 #include <UCOPData.h>
 #include <WOCO.h>
 
-class TOBAConfig_Worker;
+class TOBAConfig_Basic;
 
 //--------------------------------------------------------------------
 // TOBA: TObi's Building Automation
 //--------------------------------------------------------------------
-class TOBA_Worker
+class TOBAWorker_Basic
 {
 //==================== Enums ====================
 public:
@@ -59,6 +60,8 @@ private:
 
   //-------------------- instance --------------------
 
+  TOBAConfig_Basic* m_pConfig = nullptr;
+  
   uint8_t* m_pReceiveBuffer     = nullptr;
   uint8_t* m_pSendBuffer        = nullptr;
 
@@ -72,14 +75,23 @@ private:
 
 //==================== Constructors ====================
 public:
+  //-------------------- static --------------------
+
+  static ::EResult Create ( Stream*             i_pCommStream,
+                            UCOP*               i_pUCOP,
+                            TOBAConfig_Basic*   i_pConfig,
+                            TOBAWorker_Basic*&  o_pWorker);
+
   //-------------------- instance --------------------
 
-  TOBA_Worker ( Stream*             i_pCommStream,
-                UCOP*               i_pUCOP,
-                TOBAConfig_Worker*  i_pConfig,
-                ::EResult&          o_Result);
+  virtual ~TOBAWorker_Basic ();
 
-  ~TOBA_Worker ();
+protected:
+  //-------------------- instance --------------------
+
+  TOBAWorker_Basic (Stream*           i_pCommStream,
+                    UCOP*             i_pUCOP,
+                    TOBAConfig_Basic* i_pConfig);
 
 //==================== Properties ====================
 public:
@@ -121,19 +133,17 @@ public:
 
   virtual ::EResult Work ();
 
-  ::EResult WriteConfigToEEPROM (uint16_t i_Address);
-
 //==================== Protected Methods ====================
-private:
+protected:
   //-------------------- instance --------------------
 
-  virtual ::EResult WriteConfigToEEPROM_EXEC (uint16_t i_Address);
+  virtual ::EResult CreateDevices_EXEC ();
+
+  virtual ::EResult Verify_EXEC ();
 
 //==================== Private Methods ====================
 private:
   //-------------------- instance --------------------
-
-  ::EResult ReadConfigFromEEPROM (uint16_t i_Address);
 };
 
 #endif
