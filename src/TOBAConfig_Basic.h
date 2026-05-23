@@ -16,14 +16,12 @@ private:
   static const uint8_t c_MinRecvSendBuffersSize        = 40;
   static const uint8_t c_MinPayloadRecvSendBuffersSize = 10;
 
-  static const uint8_t c_MaxWorkerNameLength = 32;
-
   //-------------------- instance --------------------
 
   uint16_t m_SendBufferSize     = 0;
   uint16_t m_ReceiveBufferSize  = 0;
   uint16_t m_PayloadBuffersSize = 0;
-  char*    m_pWorkerName        = nullptr;
+  char     m_WorkerName[32];
   uint16_t m_EepromAddress_UCOPConfig = 0;
 
 //==================== Constructors ====================
@@ -50,12 +48,12 @@ public:
 protected:
   //-------------------- instance --------------------
 
-  TOBAConfig_Basic ( uint16_t    i_ReceiveBufferSize,
-                      uint16_t    i_SendBufferSize,
-                      uint16_t    i_PayloadBuffersSize,
-                      char*       i_pWorkerName,
-                      uint8_t     i_WorkerNameLength,
-                      uint16_t    i_EepromAddress_UCOPConfig);
+  TOBAConfig_Basic (uint16_t  i_ReceiveBufferSize,
+                    uint16_t  i_SendBufferSize,
+                    uint16_t  i_PayloadBuffersSize,
+                    char*     i_pWorkerName,
+                    uint8_t   i_WorkerNameLength,
+                    uint16_t  i_EepromAddress_UCOPConfig);
 
 private:
   //-------------------- static --------------------

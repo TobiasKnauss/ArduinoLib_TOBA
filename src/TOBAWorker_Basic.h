@@ -97,11 +97,6 @@ protected:
 public:
   //-------------------- instance --------------------
 
-  uint16_t get_EepromAddress ();
-
-  virtual uint8_t get_EepromConfigDataSize ();
-  virtual uint8_t get_EepromConfigTotalSize ();
-
   bool get_ExistsReply ();
 
   bool get_IsBusy ();

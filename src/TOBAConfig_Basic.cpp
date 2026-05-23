@@ -14,11 +14,11 @@
 {
   o_pConfig = nullptr;
   TOBAConfig_Basic* pConfig = new TOBAConfig_Basic (i_ReceiveBufferSize,
-                                                      i_SendBufferSize,
-                                                      i_PayloadBuffersSize,
-                                                      i_pWorkerName,
-                                                      i_WorkerNameLength,
-                                                      i_EepromAddress_UCOPConfig);
+                                                    i_SendBufferSize,
+                                                    i_PayloadBuffersSize,
+                                                    i_pWorkerName,
+                                                    i_WorkerNameLength,
+                                                    i_EepromAddress_UCOPConfig);
 
   ::EResult result = pConfig->Verify_EXEC ();
   if (result != ::EResult::SUCCESS)
@@ -77,7 +77,6 @@ TOBAConfig_Basic::TOBAConfig_Basic ()
 //--------------------------------------------------------------------
 TOBAConfig_Basic::~TOBAConfig_Basic ()
 {
-  DeleteObject (m_pWorkerName);
 }
 
 //--------------------------------------------------------------------
@@ -93,12 +92,10 @@ TOBAConfig_Basic::TOBAConfig_Basic (uint16_t  i_ReceiveBufferSize,
   m_PayloadBuffersSize        = i_PayloadBuffersSize;
   m_EepromAddress_UCOPConfig  = i_EepromAddress_UCOPConfig;
 
-  uint8_t workerNameLength = min (c_MaxWorkerNameLength, i_WorkerNameLength);
   if (i_pWorkerName != nullptr)
   {
-    m_pWorkerName = new char[workerNameLength + 1];
-    memset (m_pWorkerName, 0x00, workerNameLength + 1);
-    memcpy (m_pWorkerName, i_pWorkerName, workerNameLength);
+    memset (m_WorkerName, 0x00, sizeof (m_WorkerName));
+    memcpy (m_WorkerName, i_pWorkerName, min (sizeof (m_WorkerName), i_WorkerNameLength));
   }
 }
 
@@ -158,13 +155,13 @@ uint16_t TOBAConfig_Basic::get_SendBufferSize ()
 //--------------------------------------------------------------------
 char* TOBAConfig_Basic::get_WorkerName ()
 {
-  return m_pWorkerName;
+  return m_WorkerName;
 }
 
 //--------------------------------------------------------------------
 uint8_t TOBAConfig_Basic::get_WorkerNameLength ()
 {
-  return strlen (m_pWorkerName);
+  return sizeof (m_WorkerName);
 }
 
 //--------------------------------------------------------------------
@@ -201,7 +198,7 @@ TOBAWorker_Basic::EWorkerType TOBAConfig_Basic::get_WorkerType ()
   isOK &= EEPROM_GetValueAndMovePtr (io_Address, m_ReceiveBufferSize);
   isOK &= EEPROM_GetValueAndMovePtr (io_Address, m_SendBufferSize);
   isOK &= EEPROM_GetValueAndMovePtr (io_Address, m_PayloadBuffersSize);
-  isOK &= EEPROM_GetBytesAndMovePtr (io_Address, c_MaxWorkerNameLength, (uint8_t*)m_pWorkerName);
+  isOK &= EEPROM_GetBytesAndMovePtr (io_Address, sizeof (m_WorkerName), (uint8_t*)m_WorkerName);
   isOK &= EEPROM_GetValueAndMovePtr (io_Address, m_EepromAddress_UCOPConfig);
   if (!isOK)
     return ::EResult::FAIL_EEPROM_GetValue;
@@ -217,9 +214,6 @@ TOBAWorker_Basic::EWorkerType TOBAConfig_Basic::get_WorkerType ()
   ||  m_PayloadBuffersSize < c_MinPayloadRecvSendBuffersSize)
     return ::EResult::FAIL_Buffer_TooSmall;
 
-  if (m_pWorkerName == nullptr)
-    return ::EResult::FAIL_Pointer_IsZero;
-
   return ::EResult::SUCCESS;
 }
 
@@ -230,8 +224,7 @@ TOBAWorker_Basic::EWorkerType TOBAConfig_Basic::get_WorkerType ()
   isOK &= EEPROM_SetValueAndMovePtr (io_Address, m_ReceiveBufferSize);
   isOK &= EEPROM_SetValueAndMovePtr (io_Address, m_SendBufferSize);
   isOK &= EEPROM_SetValueAndMovePtr (io_Address, m_PayloadBuffersSize);
-  EEPROM_SetValue_FromStart (io_Address, c_MaxWorkerNameLength, 0x00);
-  isOK &= EEPROM_SetBytesAndMovePtr (io_Address, get_WorkerNameLength (), m_pWorkerName  FEHLER!!);
+  isOK &= EEPROM_SetBytesAndMovePtr (io_Address, sizeof (m_WorkerName), (uint8_t*)m_WorkerName);
   isOK &= EEPROM_SetValueAndMovePtr (io_Address, m_EepromAddress_UCOPConfig);
   if (!isOK)
     return ::EResult::FAIL_EEPROM_SetValue;

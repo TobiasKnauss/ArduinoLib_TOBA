@@ -1,8 +1,8 @@
 #include <Arduino.h>
 #include <Streaming.h>
 #include <UCOP.h>
-#include <TOBAWorker_Basic.h>
-#include <TOBAConfig_Basic.h>
+#include "TOBAWorker_Basic.h"
+#include "TOBAConfig_Basic.h"
 
 const uint16_t c_EepromAddr_WorkerConfig = 0;
 const uint16_t c_EepromAddr_UcopConfig = 42;
