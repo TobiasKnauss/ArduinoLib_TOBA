@@ -57,6 +57,7 @@ public:
   virtual uint8_t get_EepromConfigDataSize () override;
 
   uint8_t  get_IOCount ();
+  uint8_t  get_IOPin (uint8_t i_IONumber);
   uint8_t* get_IOPins ();
 
   virtual TOBAWorker::EWorkerType get_WorkerType () override;

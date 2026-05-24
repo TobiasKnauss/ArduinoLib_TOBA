@@ -83,6 +83,16 @@ uint8_t TOBAConfig_CustomIO::get_IOCount ()
 }
 
 //--------------------------------------------------------------------
+uint8_t TOBAConfig_CustomIO::get_IOPin (uint8_t i_IONumber)
+{
+  if (i_IONumber < 1
+  ||  i_IONumber > m_IOCount)
+    return 0;
+
+  return m_pIOPins[i_IONumber];
+}
+
+//--------------------------------------------------------------------
 uint8_t* TOBAConfig_CustomIO::get_IOPins ()
 {
   return m_pIOPins;

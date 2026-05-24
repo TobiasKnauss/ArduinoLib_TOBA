@@ -1,5 +1,5 @@
-#include <WOCO_DigitalPinState.h>
-#include <WOCO_DigitalPinMode.h>
+#include <WOCO_DigitalIOState.h>
+#include <WOCO_DigitalIOMode.h>
 #include <IOHelper.h>
 
 #include "TOBAWorker_CustomIO.h"
@@ -69,62 +69,72 @@ TOBAWorker::EWorkerType TOBAWorker_CustomIO::get_WorkerType ()
 
   UCOP::EMessageResult messageResult = UCOP::EMessageResult::InProgress;
 
+  uint8_t pinNumber = 0;
   WOCO* pWORE = nullptr;  // WOrker REply
   switch (m_pWOCO->get_Command ())
   {
-  case WOCO::ECommand::DigitalPinMode:
+  case WOCO::ECommand::DigitalIOMode:
     {
-      WOCO_DigitalPinMode* pWOCO_DigitalPinMode = (WOCO_DigitalPinMode*)m_pWOCO;
-      if (pWOCO_DigitalPinMode->get_ActionIsWrite ())
+      WOCO_DigitalIOMode* pWOCO_DigitalIOMode = (WOCO_DigitalIOMode*)m_pWOCO;
+      pinNumber = m_pConfig->get_IOPin (pWOCO_DigitalIOMode->get_IONumber ());
+      if (pinNumber > 0)
       {
-        pinMode ( pWOCO_DigitalPinMode->get_PinNumber (),
-                  pWOCO_DigitalPinMode->get_PinMode ());
-        pWORE = WOCO_DigitalPinMode::CreateWriteReply ();
+        if (pWOCO_DigitalIOMode->get_ActionIsWrite ())
+        {
+          pinMode (pinNumber, pWOCO_DigitalIOMode->get_IOMode ());
+          pWORE = WOCO_DigitalIOMode::CreateWriteReply ();
+        }
+        else
+        {
+          uint8_t currentIOMode = getPinMode (pinNumber);
+          pWORE = WOCO_DigitalIOMode::CreateReadReply(pWOCO_DigitalIOMode->get_IONumber (), currentIOMode);
+        }
+        messageResult = UCOP::EMessageResult::SUCCESS;
       }
       else
       {
-        uint8_t currentPinMode = getPinMode (pWOCO_DigitalPinMode->get_PinNumber ());
-        pWORE = WOCO_DigitalPinMode::CreateReadReply(pWOCO_DigitalPinMode->get_PinNumber (), currentPinMode);
+        messageResult = UCOP::EMessageResult::FAIL_CommandExecutionFailed;
       }
-      messageResult = UCOP::EMessageResult::SUCCESS;
     }
     break;
 
-  case WOCO::ECommand::DigitalPinState:
+  case WOCO::ECommand::DigitalIOState:
     {
-      WOCO_DigitalPinState* pWOCO_DigitalPinState = (WOCO_DigitalPinState*)m_pWOCO;
-      if (pWOCO_DigitalPinState->get_ActionIsWrite ())
+      WOCO_DigitalIOState* pWOCO_DigitalIOState = (WOCO_DigitalIOState*)m_pWOCO;
+      pinNumber = m_pConfig->get_IOPin (pWOCO_DigitalIOState->get_IONumber ());
+      if (pinNumber > 0)
       {
-        digitalWrite (pWOCO_DigitalPinState->get_PinNumber (),
-                      pWOCO_DigitalPinState->get_PinState ());
-        pWORE = WOCO_DigitalPinState::CreateWriteReply ();
+        if (pWOCO_DigitalIOState->get_ActionIsWrite ())
+        {
+          digitalWrite (pinNumber, pWOCO_DigitalIOState->get_IOState ());
+          pWORE = WOCO_DigitalIOState::CreateWriteReply ();
+        }
+        else
+        {
+          bool ioState = digitalRead (pinNumber);
+          pWORE = WOCO_DigitalIOState::CreateReadReply (pWOCO_DigitalIOState->get_IONumber (), ioState);
+        }
+        messageResult = UCOP::EMessageResult::SUCCESS;
       }
       else
       {
-        bool ioState = digitalRead (pWOCO_DigitalPinState->get_PinNumber ());
-        pWORE = WOCO_DigitalPinState::CreateReadReply (pWOCO_DigitalPinState->get_PinNumber (), ioState);
+        messageResult = UCOP::EMessageResult::FAIL_CommandExecutionFailed;
       }
-      messageResult = UCOP::EMessageResult::SUCCESS;
     }
     break;
 
   default:
-    m_ReplyData = UCOPData::Create_CommandNotSupported (m_RequestData, GetTimestamp ());
+    messageResult = UCOP::EMessageResult::FAIL_CommandNotSupported;
     break;
   }
 
   DeleteObject (m_pWOCO);
 
+  m_ReplyData = UCOPData::CreateReplyData (m_RequestData, GetTimestamp (), messageResult);
+  m_ReplyData.SetPayloadInfo (m_pPayloadSendBuffer, m_PayloadBuffersSize);
+
   if (pWORE != nullptr)
   {
-    m_ReplyData = UCOPData (m_RequestData.ActionIsWrite,
-                            m_RequestData.RemoteDeviceId,
-                            m_RequestData.MessageId,
-                            GetTimestamp (),
-                            m_RequestData.CommandId,
-                            messageResult);
-    m_ReplyData.SetPayloadInfo (m_pPayloadSendBuffer, m_PayloadBuffersSize);
-
     result = pWORE->ComposeCommandData (m_ReplyData.pPayloadBuffer,
                                         m_ReplyData.PayloadBufferLength,
                                         m_ReplyData.PayloadLength);
