@@ -95,6 +95,20 @@ TOBAWorker_Basic::EWorkerType TOBAConfig_CustomIO::get_WorkerType ()
 }
 
 //--------------------------------------------------------------------
+void TOBAConfig_CustomIO::Print_EXEC ()
+{
+  TOBAConfig_Basic::Print_EXEC ();
+
+  Serial << F("IOCount = ") << m_IOCount << endl;
+  for (int index = 0; index < m_IOCount - 1; index++)
+    Serial << F("IOPins = ") << m_pIOPins[index] << ", ";
+  if (m_IOCount == 0)
+    Serial << F("---") << endl;
+  else
+    Serial << m_pIOPins[m_IOCount - 1] << endl;
+}
+
+//--------------------------------------------------------------------
 ::EResult TOBAConfig_CustomIO::ReadFromEEPROM_EXEC (uint16_t& io_Address)
 {
   ::EResult result = TOBAConfig_Basic::ReadFromEEPROM_EXEC (io_Address);

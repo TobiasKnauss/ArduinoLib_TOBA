@@ -7,6 +7,10 @@
 #include "TOBAWorker_Basic.h"
 
 //--------------------------------------------------------------------
+//
+// The configuration of a basic TOBA worker.
+// EEPROM size: 44 bytes data + 2 bytes checksum.
+//--------------------------------------------------------------------
 class TOBAConfig_Basic
 {
 //==================== Fields ====================
@@ -81,11 +85,15 @@ public:
 public:
   //-------------------- instance --------------------
 
+  void Print ();
+
   ::EResult WriteToEEPROM (uint16_t i_Address);
 
 //==================== Protected Methods ====================
 protected:
   //-------------------- instance --------------------
+
+  virtual void Print_EXEC ();
 
   virtual ::EResult ReadFromEEPROM_EXEC (uint16_t& io_Address);
 
@@ -97,7 +105,7 @@ protected:
 private:
   //-------------------- instance --------------------
 
-  ::EResult ReadFromEEPROM_exec (uint16_t i_Address);
+  ::EResult ReadFromEEPROM (uint16_t i_Address);
 };
 
 #endif

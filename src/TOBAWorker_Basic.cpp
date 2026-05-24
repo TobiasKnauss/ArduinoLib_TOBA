@@ -49,6 +49,21 @@ const char* const TOBAWorker_Basic::c_EResult_ClassFailures_Names[] PROGMEM =
 }
 
 //--------------------------------------------------------------------
+TOBAWorker_Basic::~TOBAWorker_Basic ()
+{
+  if (m_NeedToDeleteUCOP)
+  {
+    DeleteObject (m_pUCOP);
+    DeleteObject (m_pUCOPConfig);
+  }
+
+  DeleteObject (m_pReceiveBuffer);
+  DeleteObject (m_pSendBuffer);
+  DeleteObject (m_pPayloadRecvBuffer);
+  DeleteObject (m_pPayloadSendBuffer);
+}
+
+//--------------------------------------------------------------------
 TOBAWorker_Basic::TOBAWorker_Basic (Stream*           i_pCommStream,
                                     UCOP*             i_pUCOP,
                                     TOBAConfig_Basic* i_pConfig)
@@ -56,18 +71,6 @@ TOBAWorker_Basic::TOBAWorker_Basic (Stream*           i_pCommStream,
   m_pCommStream = i_pCommStream;
   m_pUCOP       = i_pUCOP;
   m_pConfig     = i_pConfig;
-}
-
-//--------------------------------------------------------------------
-TOBAWorker_Basic::~TOBAWorker_Basic ()
-{
-  if (m_NeedToDeleteUCOP)
-    DeleteObject (m_pUCOP);
-
-  DeleteObject (m_pReceiveBuffer);
-  DeleteObject (m_pSendBuffer);
-  DeleteObject (m_pPayloadRecvBuffer);
-  DeleteObject (m_pPayloadSendBuffer);
 }
 
 //--------------------------------------------------------------------
@@ -127,7 +130,7 @@ const __FlashStringHelper* TOBAWorker_Basic::GetResultText (::EResult i_Result)
 
   ::EResult result = ::EResult::InProgress;
   bool     receivedMessageTypeIsReply = false;
-  uint8_t  receivedMessageLength      = 0;
+  uint16_t receivedMessageLength      = 0;
   UCOPData receivedData;
   receivedData.SetPayloadInfo (m_pPayloadRecvBuffer,
                                m_PayloadBuffersSize);
@@ -219,7 +222,7 @@ const __FlashStringHelper* TOBAWorker_Basic::GetResultText (::EResult i_Result)
     return (::EResult)EResult::FAIL_TOBA_WorkerIsBusy;
   if (m_pWOCO != nullptr)
     return (::EResult)EResult::FAIL_TOBA_WorkerIsWorking;
-  
+
   ::EResult result;
   WOCO* pWOCO = nullptr;
 
@@ -244,7 +247,7 @@ const __FlashStringHelper* TOBAWorker_Basic::GetResultText (::EResult i_Result)
     m_RequestData.Clear ();
     return result;
   }
-  
+
   result = m_pWOCO->AnalyzeCommandData (m_RequestData.pPayloadBuffer,
                                         m_RequestData.PayloadBufferLength,
                                         m_RequestData.PayloadLength);
@@ -324,7 +327,7 @@ uint32_t TOBAWorker_Basic::GetTimestamp ()
     return (::EResult)EResult::FAIL_TOBA_WorkerIsBusy;
   if (m_ReplyData.IsEmpty ())
     return (::EResult)EResult::FAIL_TOBA_ReplyMissing;
-  
+
   uint16_t replyMessageLength = 0;
   ::EResult result = m_pUCOP->ComposeReply (m_ReplyData,
                                             m_pSendBuffer,
@@ -404,17 +407,27 @@ uint32_t TOBAWorker_Basic::GetTimestamp ()
   ::EResult result;
   if (m_pUCOP == nullptr)
   {
-    UCOP* pUCOP = new UCOP (m_pConfig->get_EepromAddress_UCOPConfig (), result);
+    UCOPConfig* pUCOPConfig = nullptr;
+    result = UCOPConfig::Create (m_pConfig->get_EepromAddress_UCOPConfig (), pUCOPConfig);
     #ifdef TOBA_DEBUG
-    Serial << F("UCOP.ctor() result=") << UCOP::GetResultText (result) << endl;
+    Serial << F("UCOPConfig.Create() result=") << UCOP::GetResultText (result) << endl;
+    #endif
+    if (result != ::EResult::SUCCESS)
+      return result;
+
+    UCOP* pUCOP = nullptr;
+    result = UCOP::Create (m_pUCOPConfig, pUCOP);;
+    #ifdef TOBA_DEBUG
+    Serial << F("UCOP.Create() result=") << UCOP::GetResultText (result) << endl;
     #endif
     if (result != ::EResult::SUCCESS)
     {
-      delete pUCOP;
+      delete pUCOPConfig;
       return result;
     }
 
     m_NeedToDeleteUCOP = true;
+    m_pUCOPConfig = pUCOPConfig;
     m_pUCOP = pUCOP;
   }
 

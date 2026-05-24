@@ -51,7 +51,7 @@
   if (result != ::EResult::SUCCESS)
     return result;
 
-  result = pConfig->ReadFromEEPROM_exec (address);
+  result = pConfig->ReadFromEEPROM (address);
   if (result != ::EResult::SUCCESS)
   {
     delete pConfig;
@@ -161,13 +161,19 @@ char* TOBAConfig_Basic::get_WorkerName ()
 //--------------------------------------------------------------------
 uint8_t TOBAConfig_Basic::get_WorkerNameLength ()
 {
-  return sizeof (m_WorkerName);
+  return strnlen (m_WorkerName, sizeof (m_WorkerName));
 }
 
 //--------------------------------------------------------------------
 TOBAWorker_Basic::EWorkerType TOBAConfig_Basic::get_WorkerType ()
 {
   return TOBAWorker_Basic::EWorkerType::BuiltIn_Basic;
+}
+
+//--------------------------------------------------------------------
+void TOBAConfig_Basic::Print ()
+{
+  Print_EXEC ();
 }
 
 //--------------------------------------------------------------------
@@ -189,6 +195,16 @@ TOBAWorker_Basic::EWorkerType TOBAConfig_Basic::get_WorkerType ()
   EEPROM_SetValueAndMovePtr (address, checksum);
 
   return ::EResult::SUCCESS;
+}
+
+//--------------------------------------------------------------------
+void TOBAConfig_Basic::Print_EXEC ()
+{
+  Serial << F("ReceiveBufferSize        = ") << m_ReceiveBufferSize << endl;
+  Serial << F("SendBufferSize           = ") << m_SendBufferSize << endl;
+  Serial << F("PayloadBuffersSize       = ") << m_PayloadBuffersSize << endl;
+  Serial << F("WorkerName               = ") << _BUFPART (m_WorkerName, strnlen (m_WorkerName, sizeof (m_WorkerName))) << endl;
+  Serial << F("EepromAddress_UCOPConfig = ") << m_EepromAddress_UCOPConfig << endl;
 }
 
 //--------------------------------------------------------------------
@@ -228,12 +244,12 @@ TOBAWorker_Basic::EWorkerType TOBAConfig_Basic::get_WorkerType ()
   isOK &= EEPROM_SetValueAndMovePtr (io_Address, m_EepromAddress_UCOPConfig);
   if (!isOK)
     return ::EResult::FAIL_EEPROM_SetValue;
-  
+
   return ::EResult::SUCCESS;
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAConfig_Basic::ReadFromEEPROM_exec (uint16_t i_Address)
+::EResult TOBAConfig_Basic::ReadFromEEPROM (uint16_t i_Address)
 {
   uint8_t eepromConfigDataSize = get_EepromConfigDataSize ();
   uint8_t eepromConfigTotalSize = eepromConfigDataSize + get_EepromConfigChecksumSize ();

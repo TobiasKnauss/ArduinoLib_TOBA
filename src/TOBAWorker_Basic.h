@@ -6,6 +6,7 @@
 #include <MemoryTools.h>
 #include <MemoryTools_RingBuffer.h>
 #include <UCOP.h>
+#include <UCOPConfig.h>
 #include <UCOPData.h>
 #include <WOCO.h>
 
@@ -38,10 +39,11 @@ public:
 protected:
   //-------------------- instance --------------------
 
-  UCOP*     m_pUCOP = nullptr;  // Universal Communication Protocol
-  UCOPData  m_RequestData;
-  UCOPData  m_ReplyData;
-  WOCO*     m_pWOCO = nullptr;  // WOrker COmmand
+  UCOPConfig* m_pUCOPConfig = nullptr;
+  UCOP*       m_pUCOP = nullptr;  // Universal Communication Protocol
+  UCOPData    m_RequestData;
+  UCOPData    m_ReplyData;
+  WOCO*       m_pWOCO = nullptr;  // WOrker COmmand
 
   uint8_t* m_pPayloadRecvBuffer = nullptr;
   uint8_t* m_pPayloadSendBuffer = nullptr;
@@ -85,7 +87,7 @@ public:
   //-------------------- instance --------------------
 
   virtual ~TOBAWorker_Basic ();
-
+ 
 protected:
   //-------------------- instance --------------------
 

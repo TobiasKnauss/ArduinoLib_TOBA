@@ -69,6 +69,7 @@ TOBAWorker_Basic::EWorkerType TOBAWorker_CustomIO::get_WorkerType ()
 
   UCOP::EMessageResult messageResult = UCOP::EMessageResult::InProgress;
 
+  uint8_t ioPin = 0;
   WOCO* pWORE = nullptr;  // WOrker REply
   switch (m_pWOCO->get_Command ())
   {

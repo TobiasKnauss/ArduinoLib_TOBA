@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Streaming.h>
 #include <UCOP.h>
+#include <UCOPConfig.h>
 #include "TOBAWorker_Basic.h"
 #include "TOBAConfig_Basic.h"
 #include "TOBAWorker_CustomIO.h"
@@ -9,6 +10,7 @@
 const uint16_t c_EepromAddr_WorkerConfig = 0;
 const uint16_t c_EepromAddr_UcopConfig = 42;
 
+UCOPConfig*           m_pUCOPConfig           = nullptr;
 UCOP*                 m_pUCOP                 = nullptr;
 TOBAConfig_Basic*     m_pTOBAConfig_Basic     = nullptr;
 TOBAWorker_Basic*     m_pTOBAWorker_Basic     = nullptr;
@@ -24,7 +26,9 @@ void setup ()
   Serial1.begin (9600);
   delay (2000);
 
-  m_pUCOP = new UCOP (true, true, false, 0x63691401, UCOP::EChecksumType::CRC8, result);
+  result = UCOPConfig::Create (true, true, false, 0x63691401, UCOP::EChecksumType::CRC8, m_pUCOPConfig);
+  result = UCOP::Create (m_pUCOPConfig, m_pUCOP);
+
   char workerName[] = "W1"; 
   result = TOBAConfig_Basic::Create (80, 50, 20, workerName, strlen (workerName), 0, m_pTOBAConfig_Basic);
   result = TOBAConfig_Basic::Create (0, m_pTOBAConfig_Basic);

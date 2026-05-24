@@ -4,6 +4,10 @@
 #include "TOBAConfig_Basic.h"
 
 //--------------------------------------------------------------------
+//
+// The configuration of a "Custom IO" TOBA worker.
+// EEPROM size: basic config size + 1 + IO Count.
+//--------------------------------------------------------------------
 class TOBAConfig_CustomIO
 : public TOBAConfig_Basic
 {
@@ -60,6 +64,8 @@ public:
 //==================== Protected Methods ====================
 protected:
   //-------------------- instance --------------------
+
+  virtual void Print_EXEC () override;
 
   virtual ::EResult ReadFromEEPROM_EXEC (uint16_t& io_Address) override;
 
