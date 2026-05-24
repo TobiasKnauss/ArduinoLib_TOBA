@@ -1,24 +1,24 @@
 #include <EEPROM.h>
 
-#include "TOBAConfig_Basic.h"
+#include "TOBAConfig.h"
 #include "TOBAConfig_CustomIO.h"
 
 //--------------------------------------------------------------------
-::EResult TOBAConfig_Basic::Create (uint16_t            i_ReceiveBufferSize,
-                                    uint16_t            i_SendBufferSize,
-                                    uint16_t            i_PayloadBuffersSize,
-                                    char*               i_pWorkerName,
-                                    uint8_t             i_WorkerNameLength,
-                                    uint16_t            i_EepromAddress_UCOPConfig,
-                                    TOBAConfig_Basic*&  o_pConfig)
+::EResult TOBAConfig::Create (uint16_t      i_ReceiveBufferSize,
+                              uint16_t      i_SendBufferSize,
+                              uint16_t      i_PayloadBuffersSize,
+                              char*         i_pWorkerName,
+                              uint8_t       i_WorkerNameLength,
+                              uint16_t      i_EepromAddress_UCOPConfig,
+                              TOBAConfig*&  o_pConfig)
 {
   o_pConfig = nullptr;
-  TOBAConfig_Basic* pConfig = new TOBAConfig_Basic (i_ReceiveBufferSize,
-                                                    i_SendBufferSize,
-                                                    i_PayloadBuffersSize,
-                                                    i_pWorkerName,
-                                                    i_WorkerNameLength,
-                                                    i_EepromAddress_UCOPConfig);
+  TOBAConfig* pConfig = new TOBAConfig (i_ReceiveBufferSize,
+                                        i_SendBufferSize,
+                                        i_PayloadBuffersSize,
+                                        i_pWorkerName,
+                                        i_WorkerNameLength,
+                                        i_EepromAddress_UCOPConfig);
 
   ::EResult result = pConfig->Verify_EXEC ();
   if (result != ::EResult::SUCCESS)
@@ -32,8 +32,8 @@
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAConfig_Basic::Create ( uint16_t            i_EepromAddress,
-                                      TOBAConfig_Basic*& o_pConfig)
+::EResult TOBAConfig::Create (uint16_t      i_EepromAddress,
+                              TOBAConfig*&  o_pConfig)
 {
   if (o_pConfig != nullptr)
     return ::EResult::FAIL_Pointer_IsNotZero;
@@ -45,8 +45,8 @@
   if (!isOK)
     return ::EResult::FAIL_EEPROM_GetValue;
 
-  ::TOBAWorker_Basic::EWorkerType workerType = (::TOBAWorker_Basic::EWorkerType)workerTypeAsNumber;
-  TOBAConfig_Basic* pConfig = nullptr;
+  ::TOBAWorker::EWorkerType workerType = (::TOBAWorker::EWorkerType)workerTypeAsNumber;
+  TOBAConfig* pConfig = nullptr;
   ::EResult result = CreateObject (workerType, pConfig);
   if (result != ::EResult::SUCCESS)
     return result;
@@ -70,22 +70,22 @@
 }
 
 //--------------------------------------------------------------------
-TOBAConfig_Basic::TOBAConfig_Basic ()
+TOBAConfig::TOBAConfig ()
 {
 }
 
 //--------------------------------------------------------------------
-TOBAConfig_Basic::~TOBAConfig_Basic ()
+TOBAConfig::~TOBAConfig ()
 {
 }
 
 //--------------------------------------------------------------------
-TOBAConfig_Basic::TOBAConfig_Basic (uint16_t  i_ReceiveBufferSize,
-                                    uint16_t  i_SendBufferSize,
-                                    uint16_t  i_PayloadBuffersSize,
-                                    char*     i_pWorkerName,
-                                    uint8_t   i_WorkerNameLength,
-                                    uint16_t  i_EepromAddress_UCOPConfig)
+TOBAConfig::TOBAConfig (uint16_t  i_ReceiveBufferSize,
+                        uint16_t  i_SendBufferSize,
+                        uint16_t  i_PayloadBuffersSize,
+                        char*     i_pWorkerName,
+                        uint8_t   i_WorkerNameLength,
+                        uint16_t  i_EepromAddress_UCOPConfig)
 {
   m_ReceiveBufferSize         = i_ReceiveBufferSize;
   m_SendBufferSize            = i_SendBufferSize;
@@ -100,84 +100,84 @@ TOBAConfig_Basic::TOBAConfig_Basic (uint16_t  i_ReceiveBufferSize,
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAConfig_Basic::CreateObject (TOBAWorker_Basic::EWorkerType i_Type,
-                                          TOBAConfig_Basic*&            o_pConfig)
+::EResult TOBAConfig::CreateObject (TOBAWorker::EWorkerType i_Type,
+                                    TOBAConfig*&            o_pConfig)
 {
   if (o_pConfig != nullptr)
     return ::EResult::FAIL_Pointer_IsNotZero;
 
   switch (i_Type)
   {
-  case TOBAWorker_Basic::EWorkerType::BuiltIn_Basic:     o_pConfig = new TOBAConfig_Basic   (); break;
-  case TOBAWorker_Basic::EWorkerType::BuiltIn_CustomIO:  o_pConfig = new TOBAConfig_CustomIO (); break;
-  default: return (::EResult)TOBAWorker_Basic::EResult::FAIL_TOBA_WorkerTypeInvalid;
+  case TOBAWorker::EWorkerType::BuiltIn:          o_pConfig = new TOBAConfig          (); break;
+  case TOBAWorker::EWorkerType::BuiltIn_CustomIO: o_pConfig = new TOBAConfig_CustomIO (); break;
+  default: return (::EResult)TOBAWorker::EResult::FAIL_TOBA_WorkerTypeInvalid;
   }
 
   return ::EResult::SUCCESS;
 }
 
 //--------------------------------------------------------------------
-uint8_t TOBAConfig_Basic::get_EepromConfigDataSize ()
+uint8_t TOBAConfig::get_EepromConfigDataSize ()
 {
   return 44;
 }
 
 //--------------------------------------------------------------------
-uint8_t TOBAConfig_Basic::get_EepromConfigChecksumSize ()
+uint8_t TOBAConfig::get_EepromConfigChecksumSize ()
 {
   return 2;
 }
 
 //--------------------------------------------------------------------
-uint16_t TOBAConfig_Basic::get_EepromAddress_UCOPConfig ()
+uint16_t TOBAConfig::get_EepromAddress_UCOPConfig ()
 {
   return m_EepromAddress_UCOPConfig;
 }
 
 //--------------------------------------------------------------------
-uint16_t TOBAConfig_Basic::get_PayloadBuffersSize ()
+uint16_t TOBAConfig::get_PayloadBuffersSize ()
 {
   return m_PayloadBuffersSize;
 }
 
 //--------------------------------------------------------------------
-uint16_t TOBAConfig_Basic::get_ReceiveBufferSize ()
+uint16_t TOBAConfig::get_ReceiveBufferSize ()
 {
   return m_ReceiveBufferSize;
 }
 
 //--------------------------------------------------------------------
-uint16_t TOBAConfig_Basic::get_SendBufferSize ()
+uint16_t TOBAConfig::get_SendBufferSize ()
 {
   return m_SendBufferSize;
 }
 
 //--------------------------------------------------------------------
-char* TOBAConfig_Basic::get_WorkerName ()
+char* TOBAConfig::get_WorkerName ()
 {
   return m_WorkerName;
 }
 
 //--------------------------------------------------------------------
-uint8_t TOBAConfig_Basic::get_WorkerNameLength ()
+uint8_t TOBAConfig::get_WorkerNameLength ()
 {
   return strnlen (m_WorkerName, sizeof (m_WorkerName));
 }
 
 //--------------------------------------------------------------------
-TOBAWorker_Basic::EWorkerType TOBAConfig_Basic::get_WorkerType ()
+TOBAWorker::EWorkerType TOBAConfig::get_WorkerType ()
 {
-  return TOBAWorker_Basic::EWorkerType::BuiltIn_Basic;
+  return TOBAWorker::EWorkerType::BuiltIn;
 }
 
 //--------------------------------------------------------------------
-void TOBAConfig_Basic::Print ()
+void TOBAConfig::Print ()
 {
   Print_EXEC ();
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAConfig_Basic::WriteToEEPROM (uint16_t i_Address)
+::EResult TOBAConfig::WriteToEEPROM (uint16_t i_Address)
 {
   uint8_t eepromConfigDataSize = get_EepromConfigDataSize ();
   uint8_t eepromConfigTotalSize = eepromConfigDataSize + get_EepromConfigChecksumSize ();
@@ -198,7 +198,7 @@ void TOBAConfig_Basic::Print ()
 }
 
 //--------------------------------------------------------------------
-void TOBAConfig_Basic::Print_EXEC ()
+void TOBAConfig::Print_EXEC ()
 {
   Serial << F("ReceiveBufferSize        = ") << m_ReceiveBufferSize << endl;
   Serial << F("SendBufferSize           = ") << m_SendBufferSize << endl;
@@ -208,7 +208,7 @@ void TOBAConfig_Basic::Print_EXEC ()
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAConfig_Basic::ReadFromEEPROM_EXEC (uint16_t& io_Address)
+::EResult TOBAConfig::ReadFromEEPROM_EXEC (uint16_t& io_Address)
 {
   bool isOK = true;
   isOK &= EEPROM_GetValueAndMovePtr (io_Address, m_ReceiveBufferSize);
@@ -223,7 +223,7 @@ void TOBAConfig_Basic::Print_EXEC ()
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAConfig_Basic::Verify_EXEC ()
+::EResult TOBAConfig::Verify_EXEC ()
 {
   if (m_ReceiveBufferSize  < c_MinRecvSendBuffersSize
   ||  m_SendBufferSize     < c_MinRecvSendBuffersSize
@@ -234,7 +234,7 @@ void TOBAConfig_Basic::Print_EXEC ()
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAConfig_Basic::WriteToEEPROM_EXEC (uint16_t& io_Address)
+::EResult TOBAConfig::WriteToEEPROM_EXEC (uint16_t& io_Address)
 {
   bool isOK = true;
   isOK &= EEPROM_SetValueAndMovePtr (io_Address, m_ReceiveBufferSize);
@@ -249,7 +249,7 @@ void TOBAConfig_Basic::Print_EXEC ()
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAConfig_Basic::ReadFromEEPROM (uint16_t i_Address)
+::EResult TOBAConfig::ReadFromEEPROM (uint16_t i_Address)
 {
   uint8_t eepromConfigDataSize = get_EepromConfigDataSize ();
   uint8_t eepromConfigTotalSize = eepromConfigDataSize + get_EepromConfigChecksumSize ();

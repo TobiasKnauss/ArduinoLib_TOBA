@@ -1,7 +1,7 @@
 #ifndef TOBAConfig_CustomIO_h
 #define TOBAConfig_CustomIO_h
 
-#include "TOBAConfig_Basic.h"
+#include "TOBAConfig.h"
 
 //--------------------------------------------------------------------
 //
@@ -9,7 +9,7 @@
 // EEPROM size: basic config size + 1 + IO Count.
 //--------------------------------------------------------------------
 class TOBAConfig_CustomIO
-: public TOBAConfig_Basic
+: public TOBAConfig
 {
 //==================== Fields ====================
 private:
@@ -59,7 +59,7 @@ public:
   uint8_t  get_IOCount ();
   uint8_t* get_IOPins ();
 
-  virtual TOBAWorker_Basic::EWorkerType get_WorkerType () override;
+  virtual TOBAWorker::EWorkerType get_WorkerType () override;
 
 //==================== Protected Methods ====================
 protected:

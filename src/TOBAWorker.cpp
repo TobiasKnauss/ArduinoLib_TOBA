@@ -2,33 +2,33 @@
 #include <WOCO_WorkerName.h>
 #include <WOCO_WorkerType.h>
 
-#include "TOBAWorker_Basic.h"
-#include "TOBAConfig_Basic.h"
+#include "TOBAWorker.h"
+#include "TOBAConfig.h"
 #include "TOBA_defines.h"
 
 //--------------------------------------------------------------------
-#define X(name) const char TOBAWorker_Basic::_EResult_##name[] PROGMEM = #name;
+#define X(name) const char TOBAWorker::_EResult_##name[] PROGMEM = #name;
 #include "TOBA_EResult_failures.h"
 #undef X
 
 //--------------------------------------------------------------------
 #define X(name) _EResult_##name,
-const char* const TOBAWorker_Basic::c_EResult_ClassFailures_Names[] PROGMEM =
+const char* const TOBAWorker::c_EResult_ClassFailures_Names[] PROGMEM =
 {
   #include "TOBA_EResult_failures.h"
 };
 #undef X
 
 //--------------------------------------------------------------------
-::EResult TOBAWorker_Basic::Create (Stream*             i_pCommStream,
-                                    UCOP*               i_pUCOP,
-                                    TOBAConfig_Basic*   i_pConfig,
-                                    TOBAWorker_Basic*&  o_pWorker)
+::EResult TOBAWorker::Create (Stream*       i_pCommStream,
+                              UCOP*         i_pUCOP,
+                              TOBAConfig*   i_pConfig,
+                              TOBAWorker*&  o_pWorker)
 {
   o_pWorker = nullptr;
-  TOBAWorker_Basic* pWorker = new TOBAWorker_Basic (i_pCommStream,
-                                          i_pUCOP,
-                                          i_pConfig);
+  TOBAWorker* pWorker = new TOBAWorker (i_pCommStream,
+                                        i_pUCOP,
+                                        i_pConfig);
 
   ::EResult result = pWorker->Verify_EXEC ();
   if (result != ::EResult::SUCCESS)
@@ -49,7 +49,7 @@ const char* const TOBAWorker_Basic::c_EResult_ClassFailures_Names[] PROGMEM =
 }
 
 //--------------------------------------------------------------------
-TOBAWorker_Basic::~TOBAWorker_Basic ()
+TOBAWorker::~TOBAWorker ()
 {
   if (m_NeedToDeleteUCOP)
   {
@@ -64,9 +64,9 @@ TOBAWorker_Basic::~TOBAWorker_Basic ()
 }
 
 //--------------------------------------------------------------------
-TOBAWorker_Basic::TOBAWorker_Basic (Stream*           i_pCommStream,
-                                    UCOP*             i_pUCOP,
-                                    TOBAConfig_Basic* i_pConfig)
+TOBAWorker::TOBAWorker (Stream*     i_pCommStream,
+                        UCOP*       i_pUCOP,
+                        TOBAConfig* i_pConfig)
 {
   m_pCommStream = i_pCommStream;
   m_pUCOP       = i_pUCOP;
@@ -74,13 +74,13 @@ TOBAWorker_Basic::TOBAWorker_Basic (Stream*           i_pCommStream,
 }
 
 //--------------------------------------------------------------------
-bool TOBAWorker_Basic::get_ExistsReply ()
+bool TOBAWorker::get_ExistsReply ()
 {
   return !m_ReplyData.IsEmpty ();
 }
 
 //--------------------------------------------------------------------
-bool TOBAWorker_Basic::get_IsBusy ()
+bool TOBAWorker::get_IsBusy ()
 {
   return !m_RequestData.IsEmpty ()
       || !m_ReplyData  .IsEmpty ()
@@ -88,31 +88,31 @@ bool TOBAWorker_Basic::get_IsBusy ()
 }
 
 //--------------------------------------------------------------------
-bool TOBAWorker_Basic::get_IsWorking ()
+bool TOBAWorker::get_IsWorking ()
 {
   return m_pWOCO != nullptr;
 }
 
 //--------------------------------------------------------------------
-char* TOBAWorker_Basic::get_WorkerName ()
+char* TOBAWorker::get_WorkerName ()
 {
   return m_pConfig->get_WorkerName ();
 }
 
 //--------------------------------------------------------------------
-uint8_t TOBAWorker_Basic::get_WorkerNameLength ()
+uint8_t TOBAWorker::get_WorkerNameLength ()
 {
   return m_pConfig->get_WorkerNameLength ();
 }
 
 //--------------------------------------------------------------------
-TOBAWorker_Basic::EWorkerType TOBAWorker_Basic::get_WorkerType ()
+TOBAWorker::EWorkerType TOBAWorker::get_WorkerType ()
 {
-  return EWorkerType::BuiltIn_Basic;
+  return EWorkerType::BuiltIn;
 }
 
 //--------------------------------------------------------------------
-const __FlashStringHelper* TOBAWorker_Basic::GetResultText (::EResult i_Result)
+const __FlashStringHelper* TOBAWorker::GetResultText (::EResult i_Result)
 {
   if ((uint16_t)i_Result < (uint16_t)EResult::Dummy_FirstClassFailure)
     return Result::GetText (i_Result);
@@ -120,7 +120,7 @@ const __FlashStringHelper* TOBAWorker_Basic::GetResultText (::EResult i_Result)
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAWorker_Basic::AnalyzeData ()
+::EResult TOBAWorker::AnalyzeData ()
 {
   if (get_IsBusy ())
     return (::EResult)EResult::FAIL_TOBA_WorkerIsBusy;
@@ -214,7 +214,7 @@ const __FlashStringHelper* TOBAWorker_Basic::GetResultText (::EResult i_Result)
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAWorker_Basic::AnalyzeRequest ()
+::EResult TOBAWorker::AnalyzeRequest ()
 {
   if (m_RequestData.IsEmpty ())
     return (::EResult)EResult::FAIL_TOBA_RequestMissing;
@@ -284,13 +284,13 @@ const __FlashStringHelper* TOBAWorker_Basic::GetResultText (::EResult i_Result)
 }
 
 //--------------------------------------------------------------------
-uint32_t TOBAWorker_Basic::GetTimestamp ()
+uint32_t TOBAWorker::GetTimestamp ()
 {
   return 0;
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAWorker_Basic::ReadData ()
+::EResult TOBAWorker::ReadData ()
 {
   if (m_pCommStream == nullptr)
     return (::EResult)EResult::FAIL_TOBA_CommStream_NotReady;
@@ -319,7 +319,7 @@ uint32_t TOBAWorker_Basic::GetTimestamp ()
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAWorker_Basic::SendReply ()
+::EResult TOBAWorker::SendReply ()
 {
   if (m_pWOCO != nullptr)
     return (::EResult)EResult::FAIL_TOBA_WorkerIsWorking;
@@ -354,7 +354,7 @@ uint32_t TOBAWorker_Basic::GetTimestamp ()
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAWorker_Basic::Work ()
+::EResult TOBAWorker::Work ()
 {
   if (!m_ReplyData.IsEmpty ())
     return (::EResult)EResult::FAIL_TOBA_WorkerIsBusy;
@@ -402,7 +402,7 @@ uint32_t TOBAWorker_Basic::GetTimestamp ()
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAWorker_Basic::CreateDevices_EXEC ()
+::EResult TOBAWorker::CreateDevices_EXEC ()
 {
   ::EResult result;
   if (m_pUCOP == nullptr)
@@ -451,7 +451,7 @@ uint32_t TOBAWorker_Basic::GetTimestamp ()
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAWorker_Basic::Verify_EXEC ()
+::EResult TOBAWorker::Verify_EXEC ()
 {
   if (m_pCommStream == nullptr
   ||  m_pConfig     == nullptr)

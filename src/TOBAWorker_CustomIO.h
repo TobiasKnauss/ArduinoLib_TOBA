@@ -1,13 +1,13 @@
 #ifndef TOBAWorker_CustomIO_h
 #define TOBAWorker_CustomIO_h
 
-#include "TOBAWorker_Basic.h"
+#include "TOBAWorker.h"
 
 class TOBAConfig_CustomIO;
 
 //--------------------------------------------------------------------
 class TOBAWorker_CustomIO
-: public TOBAWorker_Basic
+: public TOBAWorker
 {
 //==================== Fields ====================
 private:
@@ -21,7 +21,7 @@ public:
 
   static ::EResult Create ( Stream*               i_pCommStream,
                             UCOP*                 i_pUCOP,
-                            TOBAConfig_Basic*     i_pConfig,
+                            TOBAConfig*           i_pConfig,
                             TOBAWorker_CustomIO*& o_pWorker);
 
   //-------------------- instance --------------------
@@ -31,9 +31,9 @@ public:
 protected:
   //-------------------- instance --------------------
 
-  TOBAWorker_CustomIO ( Stream*           i_pCommStream,
-                        UCOP*             i_pUCOP,
-                        TOBAConfig_Basic* i_pConfig);
+  TOBAWorker_CustomIO ( Stream*     i_pCommStream,
+                        UCOP*       i_pUCOP,
+                        TOBAConfig* i_pConfig);
 
 //==================== Properties ====================
 public:

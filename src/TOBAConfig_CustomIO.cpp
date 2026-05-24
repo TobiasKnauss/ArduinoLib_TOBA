@@ -52,12 +52,12 @@ TOBAConfig_CustomIO::TOBAConfig_CustomIO (uint16_t  i_ReceiveBufferSize,
                                           uint16_t  i_EepromAddress_UCOPConfig,
                                           uint8_t   i_IOCount,
                                           uint8_t*  i_pIOPins)
-: TOBAConfig_Basic (i_ReceiveBufferSize,
-                    i_SendBufferSize,
-                    i_PayloadBuffersSize,
-                    i_pWorkerName,
-                    i_WorkerNameLength,
-                    i_EepromAddress_UCOPConfig)
+: TOBAConfig (i_ReceiveBufferSize,
+              i_SendBufferSize,
+              i_PayloadBuffersSize,
+              i_pWorkerName,
+              i_WorkerNameLength,
+              i_EepromAddress_UCOPConfig)
 {
   m_IOCount = i_IOCount;
 
@@ -71,7 +71,7 @@ TOBAConfig_CustomIO::TOBAConfig_CustomIO (uint16_t  i_ReceiveBufferSize,
 //--------------------------------------------------------------------
 uint8_t TOBAConfig_CustomIO::get_EepromConfigDataSize ()
 {
-  return TOBAConfig_Basic::get_EepromConfigDataSize ()
+  return TOBAConfig::get_EepromConfigDataSize ()
        + 1
        + m_IOCount;
 }
@@ -89,15 +89,15 @@ uint8_t* TOBAConfig_CustomIO::get_IOPins ()
 }
 
 //--------------------------------------------------------------------
-TOBAWorker_Basic::EWorkerType TOBAConfig_CustomIO::get_WorkerType ()
+TOBAWorker::EWorkerType TOBAConfig_CustomIO::get_WorkerType ()
 {
-  return TOBAWorker_Basic::EWorkerType::BuiltIn_CustomIO;
+  return TOBAWorker::EWorkerType::BuiltIn_CustomIO;
 }
 
 //--------------------------------------------------------------------
 void TOBAConfig_CustomIO::Print_EXEC ()
 {
-  TOBAConfig_Basic::Print_EXEC ();
+  TOBAConfig::Print_EXEC ();
 
   Serial << F("IOCount = ") << m_IOCount << endl;
   for (int index = 0; index < m_IOCount - 1; index++)
@@ -111,7 +111,7 @@ void TOBAConfig_CustomIO::Print_EXEC ()
 //--------------------------------------------------------------------
 ::EResult TOBAConfig_CustomIO::ReadFromEEPROM_EXEC (uint16_t& io_Address)
 {
-  ::EResult result = TOBAConfig_Basic::ReadFromEEPROM_EXEC (io_Address);
+  ::EResult result = TOBAConfig::ReadFromEEPROM_EXEC (io_Address);
   if (result != ::EResult::SUCCESS)
     return result;
 
@@ -129,7 +129,7 @@ void TOBAConfig_CustomIO::Print_EXEC ()
 //--------------------------------------------------------------------
 ::EResult TOBAConfig_CustomIO::Verify_EXEC ()
 {
-  ::EResult result = TOBAConfig_Basic::Verify_EXEC ();
+  ::EResult result = TOBAConfig::Verify_EXEC ();
   if (result != ::EResult::SUCCESS)
     return result;
 
@@ -142,7 +142,7 @@ void TOBAConfig_CustomIO::Print_EXEC ()
 //--------------------------------------------------------------------
 ::EResult TOBAConfig_CustomIO::WriteToEEPROM_EXEC (uint16_t& io_Address)
 {
-  ::EResult result = TOBAConfig_Basic::WriteToEEPROM_EXEC (io_Address);
+  ::EResult result = TOBAConfig::WriteToEEPROM_EXEC (io_Address);
   if (result != ::EResult::SUCCESS)
     return result;
 

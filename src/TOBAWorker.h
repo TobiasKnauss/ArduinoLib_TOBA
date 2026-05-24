@@ -1,5 +1,5 @@
-#ifndef TOBAWorker_Basic_h
-#define TOBAWorker_Basic_h
+#ifndef TOBAWorker_h
+#define TOBAWorker_h
 
 #include <FastCRC.h>
 #include <Result.h>
@@ -10,12 +10,12 @@
 #include <UCOPData.h>
 #include <WOCO.h>
 
-class TOBAConfig_Basic;
+class TOBAConfig;
 
 //--------------------------------------------------------------------
 // TOBA: TObi's Building Automation
 //--------------------------------------------------------------------
-class TOBAWorker_Basic
+class TOBAWorker
 {
 //==================== Enums ====================
 public:
@@ -31,7 +31,7 @@ public:
   enum class EWorkerType : uint32_t
   {
     None = 0,
-    BuiltIn_Basic    = 0x00000100,
+    BuiltIn    = 0x00000100,
     BuiltIn_CustomIO = 0x00000101,
   };
 
@@ -62,7 +62,7 @@ private:
 
   //-------------------- instance --------------------
 
-  TOBAConfig_Basic* m_pConfig = nullptr;
+  TOBAConfig* m_pConfig = nullptr;
   
   uint8_t* m_pReceiveBuffer     = nullptr;
   uint8_t* m_pSendBuffer        = nullptr;
@@ -79,21 +79,21 @@ private:
 public:
   //-------------------- static --------------------
 
-  static ::EResult Create ( Stream*             i_pCommStream,
-                            UCOP*               i_pUCOP,
-                            TOBAConfig_Basic*   i_pConfig,
-                            TOBAWorker_Basic*&  o_pWorker);
+  static ::EResult Create ( Stream*       i_pCommStream,
+                            UCOP*         i_pUCOP,
+                            TOBAConfig*   i_pConfig,
+                            TOBAWorker*&  o_pWorker);
 
   //-------------------- instance --------------------
 
-  virtual ~TOBAWorker_Basic ();
+  virtual ~TOBAWorker ();
  
 protected:
   //-------------------- instance --------------------
 
-  TOBAWorker_Basic (Stream*           i_pCommStream,
-                    UCOP*             i_pUCOP,
-                    TOBAConfig_Basic* i_pConfig);
+  TOBAWorker (Stream*     i_pCommStream,
+              UCOP*       i_pUCOP,
+              TOBAConfig* i_pConfig);
 
 //==================== Properties ====================
 public:

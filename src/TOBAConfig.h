@@ -1,17 +1,17 @@
-#ifndef TOBAConfig_Basic_h
-#define TOBAConfig_Basic_h
+#ifndef TOBAConfig_h
+#define TOBAConfig_h
 
 #include <Result.h>
 #include <MemoryTools_EEPROM.h>
 
-#include "TOBAWorker_Basic.h"
+#include "TOBAWorker.h"
 
 //--------------------------------------------------------------------
 //
 // The configuration of a basic TOBA worker.
 // EEPROM size: 44 bytes data + 2 bytes checksum.
 //--------------------------------------------------------------------
-class TOBAConfig_Basic
+class TOBAConfig
 {
 //==================== Fields ====================
 private:
@@ -32,38 +32,38 @@ private:
 public:
   //-------------------- static --------------------
 
-  static ::EResult Create ( uint16_t            i_ReceiveBufferSize,
-                            uint16_t            i_SendBufferSize,
-                            uint16_t            i_PayloadBuffersSize,
-                            char*               i_pWorkerName,
-                            uint8_t             i_WorkerNameLength,
-                            uint16_t            i_EepromAddress_UCOPConfig,
-                            TOBAConfig_Basic*&  o_pConfig);
+  static ::EResult Create ( uint16_t      i_ReceiveBufferSize,
+                            uint16_t      i_SendBufferSize,
+                            uint16_t      i_PayloadBuffersSize,
+                            char*         i_pWorkerName,
+                            uint8_t       i_WorkerNameLength,
+                            uint16_t      i_EepromAddress_UCOPConfig,
+                            TOBAConfig*&  o_pConfig);
 
   static ::EResult Create ( uint16_t            i_EepromAddress,
-                            TOBAConfig_Basic*&  o_pConfig);
+                            TOBAConfig*&  o_pConfig);
 
   //-------------------- instance --------------------
 
-  TOBAConfig_Basic ();
+  TOBAConfig ();
 
-  virtual ~TOBAConfig_Basic ();
+  virtual ~TOBAConfig ();
 
 protected:
   //-------------------- instance --------------------
 
-  TOBAConfig_Basic (uint16_t  i_ReceiveBufferSize,
-                    uint16_t  i_SendBufferSize,
-                    uint16_t  i_PayloadBuffersSize,
-                    char*     i_pWorkerName,
-                    uint8_t   i_WorkerNameLength,
-                    uint16_t  i_EepromAddress_UCOPConfig);
+  TOBAConfig (uint16_t  i_ReceiveBufferSize,
+              uint16_t  i_SendBufferSize,
+              uint16_t  i_PayloadBuffersSize,
+              char*     i_pWorkerName,
+              uint8_t   i_WorkerNameLength,
+              uint16_t  i_EepromAddress_UCOPConfig);
 
 private:
   //-------------------- static --------------------
 
-  static ::EResult CreateObject ( TOBAWorker_Basic::EWorkerType i_Type,
-                                  TOBAConfig_Basic*&            o_pConfig);
+  static ::EResult CreateObject ( TOBAWorker::EWorkerType i_Type,
+                                  TOBAConfig*&            o_pConfig);
 
 //==================== Properties ====================
 public:
@@ -79,7 +79,7 @@ public:
   char*    get_WorkerName ();
   uint8_t  get_WorkerNameLength ();
 
-  virtual TOBAWorker_Basic::EWorkerType get_WorkerType ();
+  virtual TOBAWorker::EWorkerType get_WorkerType ();
 
 //==================== Public Methods ====================
 public:

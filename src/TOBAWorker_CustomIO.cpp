@@ -9,7 +9,7 @@
 //--------------------------------------------------------------------
 ::EResult TOBAWorker_CustomIO::Create ( Stream*               i_pCommStream,
                                         UCOP*                 i_pUCOP,
-                                        TOBAConfig_Basic*     i_pConfig,
+                                        TOBAConfig*           i_pConfig,
                                         TOBAWorker_CustomIO*& o_pWorker)
 {
   o_pWorker = nullptr;
@@ -41,10 +41,10 @@ TOBAWorker_CustomIO::~TOBAWorker_CustomIO ()
 }
 
 //--------------------------------------------------------------------
-TOBAWorker_CustomIO::TOBAWorker_CustomIO (Stream*           i_pCommStream,
-                                          UCOP*             i_pUCOP,
-                                          TOBAConfig_Basic* i_pConfig)
-: TOBAWorker_Basic (i_pCommStream,
+TOBAWorker_CustomIO::TOBAWorker_CustomIO (Stream*     i_pCommStream,
+                                          UCOP*       i_pUCOP,
+                                          TOBAConfig* i_pConfig)
+: TOBAWorker (i_pCommStream,
                     i_pUCOP,
                     i_pConfig)
 {
@@ -52,7 +52,7 @@ TOBAWorker_CustomIO::TOBAWorker_CustomIO (Stream*           i_pCommStream,
 }
 
 //--------------------------------------------------------------------
-TOBAWorker_Basic::EWorkerType TOBAWorker_CustomIO::get_WorkerType ()
+TOBAWorker::EWorkerType TOBAWorker_CustomIO::get_WorkerType ()
 {
   return EWorkerType::BuiltIn_CustomIO;
 }
@@ -60,7 +60,7 @@ TOBAWorker_Basic::EWorkerType TOBAWorker_CustomIO::get_WorkerType ()
 //--------------------------------------------------------------------
 ::EResult TOBAWorker_CustomIO::Work ()
 {
-  ::EResult result = TOBAWorker_Basic::Work ();
+  ::EResult result = TOBAWorker::Work ();
   if (result != ::EResult::InProgress)
   {
     DeleteObject (m_pWOCO);
@@ -69,7 +69,6 @@ TOBAWorker_Basic::EWorkerType TOBAWorker_CustomIO::get_WorkerType ()
 
   UCOP::EMessageResult messageResult = UCOP::EMessageResult::InProgress;
 
-  uint8_t ioPin = 0;
   WOCO* pWORE = nullptr;  // WOrker REply
   switch (m_pWOCO->get_Command ())
   {
@@ -78,7 +77,7 @@ TOBAWorker_Basic::EWorkerType TOBAWorker_CustomIO::get_WorkerType ()
       WOCO_DigitalPinMode* pWOCO_DigitalPinMode = (WOCO_DigitalPinMode*)m_pWOCO;
       if (pWOCO_DigitalPinMode->get_ActionIsWrite ())
       {
-        pinMode (pWOCO_DigitalPinMode->get_PinNumber (),
+        pinMode ( pWOCO_DigitalPinMode->get_PinNumber (),
                   pWOCO_DigitalPinMode->get_PinMode ());
         pWORE = WOCO_DigitalPinMode::CreateWriteReply ();
       }
