@@ -35,7 +35,7 @@ public:
   static ::EResult Create ( uint16_t      i_ReceiveBufferSize,
                             uint16_t      i_SendBufferSize,
                             uint16_t      i_PayloadBuffersSize,
-                            char*         i_pWorkerName,
+                            const char*   i_pWorkerName,
                             uint8_t       i_WorkerNameLength,
                             uint16_t      i_EepromAddress_UCOPConfig,
                             TOBAConfig*&  o_pConfig);
@@ -52,12 +52,12 @@ public:
 protected:
   //-------------------- instance --------------------
 
-  TOBAConfig (uint16_t  i_ReceiveBufferSize,
-              uint16_t  i_SendBufferSize,
-              uint16_t  i_PayloadBuffersSize,
-              char*     i_pWorkerName,
-              uint8_t   i_WorkerNameLength,
-              uint16_t  i_EepromAddress_UCOPConfig);
+  TOBAConfig (uint16_t    i_ReceiveBufferSize,
+              uint16_t    i_SendBufferSize,
+              uint16_t    i_PayloadBuffersSize,
+              const char* i_pWorkerName,
+              uint8_t     i_WorkerNameLength,
+              uint16_t    i_EepromAddress_UCOPConfig);
 
 private:
   //-------------------- static --------------------

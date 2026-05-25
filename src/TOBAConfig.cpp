@@ -7,7 +7,7 @@
 ::EResult TOBAConfig::Create (uint16_t      i_ReceiveBufferSize,
                               uint16_t      i_SendBufferSize,
                               uint16_t      i_PayloadBuffersSize,
-                              char*         i_pWorkerName,
+                              const char*   i_pWorkerName,
                               uint8_t       i_WorkerNameLength,
                               uint16_t      i_EepromAddress_UCOPConfig,
                               TOBAConfig*&  o_pConfig)
@@ -51,7 +51,7 @@
   if (result != ::EResult::SUCCESS)
     return result;
 
-  result = pConfig->ReadFromEEPROM (address);
+  result = pConfig->ReadFromEEPROM (i_EepromAddress);
   if (result != ::EResult::SUCCESS)
   {
     delete pConfig;
@@ -80,12 +80,12 @@ TOBAConfig::~TOBAConfig ()
 }
 
 //--------------------------------------------------------------------
-TOBAConfig::TOBAConfig (uint16_t  i_ReceiveBufferSize,
-                        uint16_t  i_SendBufferSize,
-                        uint16_t  i_PayloadBuffersSize,
-                        char*     i_pWorkerName,
-                        uint8_t   i_WorkerNameLength,
-                        uint16_t  i_EepromAddress_UCOPConfig)
+TOBAConfig::TOBAConfig (uint16_t    i_ReceiveBufferSize,
+                        uint16_t    i_SendBufferSize,
+                        uint16_t    i_PayloadBuffersSize,
+                        const char* i_pWorkerName,
+                        uint8_t     i_WorkerNameLength,
+                        uint16_t    i_EepromAddress_UCOPConfig)
 {
   m_ReceiveBufferSize         = i_ReceiveBufferSize;
   m_SendBufferSize            = i_SendBufferSize;
@@ -256,7 +256,7 @@ void TOBAConfig::Print_EXEC ()
   if (eepromConfigTotalSize + i_Address > EEPROM.length ())
     return ::EResult::FAIL_EEPROM_IndexOutsideRange;
 
-  uint16_t address = i_Address;
+  uint16_t address = i_Address + 4;
   ::EResult result = ReadFromEEPROM_EXEC (address);
   if (result != ::EResult::SUCCESS)
     return result;

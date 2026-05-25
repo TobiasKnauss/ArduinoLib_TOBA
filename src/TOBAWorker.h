@@ -31,7 +31,7 @@ public:
   enum class EWorkerType : uint32_t
   {
     None = 0,
-    BuiltIn    = 0x00000100,
+    BuiltIn          = 0x00000100,
     BuiltIn_CustomIO = 0x00000101,
   };
 
@@ -63,7 +63,7 @@ private:
   //-------------------- instance --------------------
 
   TOBAConfig* m_pConfig = nullptr;
-  
+
   uint8_t* m_pReceiveBuffer     = nullptr;
   uint8_t* m_pSendBuffer        = nullptr;
 
@@ -87,7 +87,7 @@ public:
   //-------------------- instance --------------------
 
   virtual ~TOBAWorker ();
- 
+
 protected:
   //-------------------- instance --------------------
 

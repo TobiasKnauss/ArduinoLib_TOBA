@@ -4,11 +4,11 @@
 ::EResult TOBAConfig_CustomIO::Create ( uint16_t              i_ReceiveBufferSize,
                                         uint16_t              i_SendBufferSize,
                                         uint16_t              i_PayloadBuffersSize,
-                                        char*                 i_pWorkerName,
+                                        const char*           i_pWorkerName,
                                         uint8_t               i_WorkerNameLength,
                                         uint16_t              i_EepromAddress_UCOPConfig,
                                         uint8_t               i_IOCount,
-                                        uint8_t*              i_pIOPins,
+                                        const uint8_t*        i_pIOPins,
                                         TOBAConfig_CustomIO*& o_pConfig)
 {
   o_pConfig = nullptr;
@@ -44,14 +44,14 @@ TOBAConfig_CustomIO::~TOBAConfig_CustomIO ()
 }
 
 //--------------------------------------------------------------------
-TOBAConfig_CustomIO::TOBAConfig_CustomIO (uint16_t  i_ReceiveBufferSize,
-                                          uint16_t  i_SendBufferSize,
-                                          uint16_t  i_PayloadBuffersSize,
-                                          char*     i_pWorkerName,
-                                          uint8_t   i_WorkerNameLength,
-                                          uint16_t  i_EepromAddress_UCOPConfig,
-                                          uint8_t   i_IOCount,
-                                          uint8_t*  i_pIOPins)
+TOBAConfig_CustomIO::TOBAConfig_CustomIO (uint16_t        i_ReceiveBufferSize,
+                                          uint16_t        i_SendBufferSize,
+                                          uint16_t        i_PayloadBuffersSize,
+                                          const char*     i_pWorkerName,
+                                          uint8_t         i_WorkerNameLength,
+                                          uint16_t        i_EepromAddress_UCOPConfig,
+                                          uint8_t         i_IOCount,
+                                          const uint8_t*  i_pIOPins)
 : TOBAConfig (i_ReceiveBufferSize,
               i_SendBufferSize,
               i_PayloadBuffersSize,
