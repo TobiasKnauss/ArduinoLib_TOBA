@@ -88,6 +88,12 @@ bool TOBAWorker::get_IsBusy ()
 }
 
 //--------------------------------------------------------------------
+bool TOBAWorker::get_IsDataAvailable ()
+{
+  return m_DataAvailable;
+}
+
+//--------------------------------------------------------------------
 bool TOBAWorker::get_IsWorking ()
 {
   return m_pWOCO != nullptr;
@@ -126,7 +132,7 @@ const __FlashStringHelper* TOBAWorker::GetResultText (::EResult i_Result)
     return (::EResult)EResult::FAIL_TOBA_WorkerIsBusy;
 
   if (!m_DataAvailable)
-    return ::EResult::SUCCESS;
+    return (::EResult)EResult::FAIL_TOBA_DataMissing;
 
   ::EResult result = ::EResult::InProgress;
   bool     receivedMessageTypeIsReply = false;
@@ -416,7 +422,7 @@ uint32_t TOBAWorker::GetTimestamp ()
       return result;
 
     UCOP* pUCOP = nullptr;
-    result = UCOP::Create (m_pUCOPConfig, pUCOP);;
+    result = UCOP::Create (pUCOPConfig, pUCOP);;
     #ifdef TOBA_DEBUG
     Serial << F("UCOP.Create() result=") << UCOP::GetResultText (result) << endl;
     #endif

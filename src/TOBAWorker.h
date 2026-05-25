@@ -103,6 +103,8 @@ public:
 
   bool get_IsBusy ();
 
+  bool get_IsDataAvailable ();
+
   bool get_IsWorking ();
 
   char*   get_WorkerName ();
