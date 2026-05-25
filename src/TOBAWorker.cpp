@@ -51,6 +51,8 @@ const char* const TOBAWorker::c_EResult_ClassFailures_Names[] PROGMEM =
 //--------------------------------------------------------------------
 TOBAWorker::~TOBAWorker ()
 {
+  Clear ();
+
   if (m_NeedToDeleteUCOP)
   {
     DeleteObject (m_pUCOP);
@@ -74,23 +76,35 @@ TOBAWorker::TOBAWorker (Stream*     i_pCommStream,
 }
 
 //--------------------------------------------------------------------
+bool TOBAWorker::get_ExistsData ()
+{
+  return m_DataAvailable;
+}
+
+//--------------------------------------------------------------------
 bool TOBAWorker::get_ExistsReply ()
 {
   return !m_ReplyData.IsEmpty ();
 }
 
 //--------------------------------------------------------------------
-bool TOBAWorker::get_IsBusy ()
+bool TOBAWorker::get_ExistsRequest ()
 {
-  return !m_RequestData.IsEmpty ()
-      || !m_ReplyData  .IsEmpty ()
-      || m_pWOCO != nullptr;
+  return !m_RequestData.IsEmpty ();
 }
 
 //--------------------------------------------------------------------
-bool TOBAWorker::get_IsDataAvailable ()
+bool TOBAWorker::get_ExistsWork ()
 {
-  return m_DataAvailable;
+  return m_pWOCO != nullptr;
+}
+
+//--------------------------------------------------------------------
+bool TOBAWorker::get_IsBusy ()
+{
+  return get_ExistsRequest ()
+      || get_ExistsReply ()
+      || get_ExistsWork();
 }
 
 //--------------------------------------------------------------------
@@ -150,7 +164,7 @@ const __FlashStringHelper* TOBAWorker::GetResultText (::EResult i_Result)
                                    receivedMessageTypeIsReply,
                                    receivedMessageLength);
 
-  // In the ring buffer, clear the part that contains the found message.
+  // In the ring buffer, clear the part that has been analysed (and maybe contains a message).
   RingBuffer_SetValue_StartToEnd (m_pReceiveBuffer,
                                   m_pConfig->get_ReceiveBufferSize (),
                                   receiveBufferReadIndexAtAnalyzeStart,
@@ -193,12 +207,7 @@ const __FlashStringHelper* TOBAWorker::GetResultText (::EResult i_Result)
     #ifdef TOBA_DEBUG
     Serial << F("Message is faulty. Creating failure reply.");
     #endif
-    m_ReplyData = UCOPData (receivedData.ActionIsWrite,
-                            receivedData.RemoteDeviceId,
-                            receivedData.MessageId,
-                            GetTimestamp (),
-                            receivedData.CommandId,
-                            messageResult);
+    m_ReplyData = UCOPData::CreateReplyData (receivedData, GetTimestamp (), messageResult);
   }
 
   if ((UCOP::EResult)result == UCOP::EResult::FAIL_UCOP_Message_NotFound)
@@ -242,12 +251,7 @@ const __FlashStringHelper* TOBAWorker::GetResultText (::EResult i_Result)
 
   if (result != ::EResult::SUCCESS)
   {
-    m_ReplyData = UCOPData (m_RequestData.ActionIsWrite,
-                            m_RequestData.RemoteDeviceId,
-                            m_RequestData.MessageId,
-                            GetTimestamp (),
-                            m_RequestData.CommandId,
-                            UCOP::EMessageResult::FAIL_CommandNotSupported);
+    m_ReplyData = UCOPData::CreateReplyData (m_RequestData, GetTimestamp (), UCOP::EMessageResult::FAIL_CommandNotSupported);
 
     DeleteObject (pWOCO);
     m_RequestData.Clear ();
@@ -269,12 +273,7 @@ const __FlashStringHelper* TOBAWorker::GetResultText (::EResult i_Result)
 
   if (result != ::EResult::SUCCESS)
   {
-    m_ReplyData = UCOPData (m_RequestData.ActionIsWrite,
-                            m_RequestData.RemoteDeviceId,
-                            m_RequestData.MessageId,
-                            GetTimestamp (),
-                            m_RequestData.CommandId,
-                            UCOP::EMessageResult::FAIL_PayloadProcessing);
+    m_ReplyData = UCOPData::CreateReplyData (m_RequestData, GetTimestamp (), UCOP::EMessageResult::FAIL_PayloadProcessing);
 
     DeleteObject (pWOCO);
     m_RequestData.Clear ();
@@ -287,6 +286,30 @@ const __FlashStringHelper* TOBAWorker::GetResultText (::EResult i_Result)
   m_pWOCO = pWOCO;
 
   return ::EResult::SUCCESS;
+}
+
+//--------------------------------------------------------------------
+void TOBAWorker::Clear ()
+{
+  ClearBuffers ();
+  ClearReqRepWoco ();
+}
+
+//--------------------------------------------------------------------
+void TOBAWorker::ClearBuffers ()
+{
+  memset (m_pReceiveBuffer    , c_BufferDefaultValue, m_pConfig->get_ReceiveBufferSize () );
+  memset (m_pSendBuffer       , c_BufferDefaultValue, m_pConfig->get_SendBufferSize ()    );
+  memset (m_pPayloadRecvBuffer, c_BufferDefaultValue, m_pConfig->get_PayloadBuffersSize ());
+  memset (m_pPayloadSendBuffer, c_BufferDefaultValue, m_pConfig->get_PayloadBuffersSize ());
+}
+
+//--------------------------------------------------------------------
+void TOBAWorker::ClearReqRepWoco ()
+{
+  m_ReplyData  .Clear ();
+  m_RequestData.Clear ();
+  DeleteObject (m_pWOCO);
 }
 
 //--------------------------------------------------------------------
@@ -340,6 +363,7 @@ uint32_t TOBAWorker::GetTimestamp ()
                                             m_pConfig->get_SendBufferSize (),
                                             replyMessageLength);
 
+  m_ReplyData.Clear ();
   memset (m_pPayloadSendBuffer, c_BufferDefaultValue, m_ReplyData.PayloadLength);
 
   #ifdef TOBA_DEBUG
@@ -368,30 +392,29 @@ uint32_t TOBAWorker::GetTimestamp ()
     return (::EResult)EResult::FAIL_TOBA_WorkerCommandMissing;
 
   WOCO* pWORE = nullptr;  // WOrker REply
+  UCOP::EMessageResult messageResult = UCOP::EMessageResult::None;
   switch (m_pWOCO->get_Command ())
   {
   case WOCO::ECommand::WorkerType:
     pWORE = WOCO_WorkerType::CreateReadReply ((uint32_t)get_WorkerType ());
+    messageResult = UCOP::EMessageResult::SUCCESS;
     break;
 
   case WOCO::ECommand::WorkerName:
     pWORE = WOCO_WorkerName::CreateReadReply (get_WorkerName (), get_WorkerNameLength ());
+    messageResult = UCOP::EMessageResult::SUCCESS;
     break;
 
   case WOCO::ECommand::AliveCheck:
     pWORE = WOCO_AliveCheck::CreateReadReply ();
+    messageResult = UCOP::EMessageResult::SUCCESS;
     break;
 
   default:
     return ::EResult::InProgress;
   }
 
-  m_ReplyData = UCOPData (m_RequestData.ActionIsWrite,
-                          m_RequestData.RemoteDeviceId,
-                          m_RequestData.MessageId,
-                          GetTimestamp (),
-                          m_RequestData.CommandId,
-                          UCOP::EMessageResult::SUCCESS);
+  m_ReplyData = UCOPData::CreateReplyData (m_RequestData, GetTimestamp (), messageResult);
   m_ReplyData.SetPayloadInfo (m_pPayloadSendBuffer, m_PayloadBuffersSize);
 
   ::EResult result = pWORE->ComposeCommandData (m_ReplyData.pPayloadBuffer,
@@ -401,6 +424,7 @@ uint32_t TOBAWorker::GetTimestamp ()
   Serial << F("WOCO.ComposeCommandData() result=") << UCOP::GetResultText (result) << endl;
   #endif
 
+  m_RequestData.Clear ();
   DeleteObject (m_pWOCO);
   DeleteObject (pWORE);
 
@@ -443,13 +467,13 @@ uint32_t TOBAWorker::GetTimestamp ()
   if (!Memory_Allocate (m_pPayloadSendBuffer, m_pConfig->get_PayloadBuffersSize (), c_BufferDefaultValue)) return ::EResult::FAIL_Buffer_Create;
 
   #ifdef TOBA_DEBUG
-  Serial << F("ReceiveBuffer     Addr=") << _HEX4((uint16_t)m_pReceiveBuffer)     << " Len=" << m_pConfig->get_ReceiveBufferSize () << endl;
+  Serial << F("ReceiveBuffer     Addr=") << _HEX4((uint16_t)m_pReceiveBuffer)     << F(" Len=") << m_pConfig->get_ReceiveBufferSize () << endl;
   Memory_PrintLn (m_pReceiveBuffer, m_pConfig->get_ReceiveBufferSize ());
-  Serial << F("SendBuffer        Addr=") << _HEX4((uint16_t)m_pSendBuffer)        << " Len=" << m_pConfig->get_SendBufferSize () << endl;
+  Serial << F("SendBuffer        Addr=") << _HEX4((uint16_t)m_pSendBuffer)        << F(" Len=") << m_pConfig->get_SendBufferSize () << endl;
   Memory_PrintLn (m_pSendBuffer, m_pConfig->get_SendBufferSize ());
-  Serial << F("PayloadRecvBuffer Addr=") << _HEX4((uint16_t)m_pPayloadRecvBuffer) << " Len=" << m_pConfig->get_PayloadBuffersSize () << endl;
+  Serial << F("PayloadRecvBuffer Addr=") << _HEX4((uint16_t)m_pPayloadRecvBuffer) << F(" Len=") << m_pConfig->get_PayloadBuffersSize () << endl;
   Memory_PrintLn (m_pPayloadRecvBuffer, m_pConfig->get_PayloadBuffersSize ());
-  Serial << F("PayloadSendBuffer Addr=") << _HEX4((uint16_t)m_pPayloadSendBuffer) << " Len=" << m_pConfig->get_PayloadBuffersSize () << endl;
+  Serial << F("PayloadSendBuffer Addr=") << _HEX4((uint16_t)m_pPayloadSendBuffer) << F(" Len=") << m_pConfig->get_PayloadBuffersSize () << endl;
   Memory_PrintLn (m_pPayloadSendBuffer, m_pConfig->get_PayloadBuffersSize ());
   #endif
 

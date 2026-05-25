@@ -35,21 +35,43 @@ void loop ()
 
   EResult result;
 
+  // Read data from the stored stream and write it into a buffer.
   result = m_pTOBAWorker->ReadData ();
   Serial.println (TOBAWorker::GetResultText (result));
-  Serial << "Data avilable: " << m_pTOBAWorker->get_IsDataAvailable () << endl;;
+  Serial << "Data exists: " << m_pTOBAWorker->get_ExistsData () << endl;;
 
-  result = m_pTOBAWorker->AnalyzeData ();
-  Serial.println (TOBAWorker::GetResultText (result));
+  // Analyze the read data to find a request message.
+  // This may only be done, if no active request, work, or reply exists; otherwise, an active request will be overwritten.
+  if (m_pTOBAWorker->get_ExistsData ()
+  &&  !m_pTOBAWorker->get_IsBusy ())
+  {
+    result = m_pTOBAWorker->AnalyzeData ();
+    Serial.println (TOBAWorker::GetResultText (result));
+  }
 
-  result = m_pTOBAWorker->AnalyzeRequest ();
-  Serial.println (TOBAWorker::GetResultText (result));
+  // Analyse the received request to retrieve a worker command.
+  // It is sufficient to check if a request exists, because one was only created if the worker was not busy.
+  if (m_pTOBAWorker->get_ExistsRequest ())
+  {
+    result = m_pTOBAWorker->AnalyzeRequest ();
+    Serial.println (TOBAWorker::GetResultText (result));
+  }
 
-  result = m_pTOBAWorker->Work ();
-  Serial.println (TOBAWorker::GetResultText (result));
+  // Execute the received worker command and create a reply.
+  // It usually is sufficient to check if a worker command exists, because one was only created if the worker was not busy.
+  if (m_pTOBAWorker->get_ExistsWork ())
+  {
+    result = m_pTOBAWorker->Work ();
+    Serial.println (TOBAWorker::GetResultText (result));
+  }
 
-  result = m_pTOBAWorker->SendReply ();
-  Serial.println (TOBAWorker::GetResultText (result));
+  // Send the reply that was created during analysis or work.
+  // It usually is sufficient to check if a reply exists, because one was only created if the worker has finished or a failure happened.
+  if (m_pTOBAWorker->get_ExistsReply ())
+  {
+    result = m_pTOBAWorker->SendReply ();
+    Serial.println (TOBAWorker::GetResultText (result));
+  }
 
   Serial << "Sleeping " << c_Sleep_ms << " ms." << endl << endl;
   delay (c_Sleep_ms);

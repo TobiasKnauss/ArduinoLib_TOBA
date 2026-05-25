@@ -99,12 +99,12 @@ protected:
 public:
   //-------------------- instance --------------------
 
+  bool get_ExistsData ();
+  bool get_ExistsRequest ();
   bool get_ExistsReply ();
+  bool get_ExistsWork ();
 
   bool get_IsBusy ();
-
-  bool get_IsDataAvailable ();
-
   bool get_IsWorking ();
 
   char*   get_WorkerName ();
@@ -120,16 +120,46 @@ public:
 
   //-------------------- instance --------------------
 
+  // Analyze the read data to find a request message.
+  // The analysis is only allowed, if no active request, work, or reply exists; otherwise, an active request would be overwritten. The method contains checks to avoid that.
+  // The analysis is only possible, if data exists. The method contains a check to ensure that.
+  // If the analysis succeeds, a request is created. If the analysis fails, a failure reply is created.
   ::EResult AnalyzeData ();
 
+  // Analyse the received request to retrieve a worker command.
+  // The analysis is only allowed, if no active worker command or reply exists; otherwise, an active worker command would be overwritten. The method contains checks to avoid that.
+  // It usually is sufficient to check if a request exists, because one was only created if the worker was not busy.
+  // The analysis is only possible, if a request exists. The method contains a check to ensure that.
+  // If the analysis succeeds, a worker command is created. If the analysis fails, a failure reply is created.
   ::EResult AnalyzeRequest ();
+
+  // Clear all buffers, clear request and reply, and delete the worker command.
+  void Clear ();
+
+  // Clear all buffers.
+  void ClearBuffers ();
+
+  // Clear request and reply, and delete the worker command.
+  void ClearReqRepWoco ();
 
   uint32_t GetTimestamp ();
 
+  // Read data from the stored stream and write it into a buffer.
+  // The reading is always allowed and possible.
   ::EResult ReadData ();
 
+  // Send the reply that was created during analysis or work.
+  // The sending is only allowed, if no active worker command exists; otherwise, a reply had been created early. The method contains a check to avoid that.
+  // It usually is sufficient to check if a reply exists, because one was only created if the worker has finished or a failure happened.
+  // The sending is only possible, if a reply exists. The method contains a check to ensure that.
+  // The reply is deleted after it has been sent.
   ::EResult SendReply ();
 
+  // Execute the received worker command.
+  // The work is only allowed, if no active reply exists; otherwise, an active reply would be overwritten. The method contains a check to avoid that.
+  // It usually is sufficient to check if a worker command exists, because one was only created if the worker was not busy.
+  // The work is only possible, if a worker command exists. The method contains a check to ensure that.
+  // When the work is done, the request and the worker command are deleted and a reply is created.
   virtual ::EResult Work ();
 
 //==================== Protected Methods ====================
