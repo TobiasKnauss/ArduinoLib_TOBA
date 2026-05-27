@@ -1,17 +1,18 @@
-#ifndef TOBAConfig_h
-#define TOBAConfig_h
+#ifndef TOBADeviceConfig_h
+#define TOBADeviceConfig_h
 
 #include <Result.h>
 #include <MemoryTools_EEPROM.h>
 
-#include "TOBAWorker.h"
+#include "TOBA.h"
+#include "TOBADevice.h"
 
 //--------------------------------------------------------------------
 //
-// The configuration of a basic TOBA worker.
+// The configuration of a any TOBA device.
 // EEPROM size: 44 bytes data + 2 bytes checksum.
 //--------------------------------------------------------------------
-class TOBAConfig
+class TOBADeviceConfig
 {
 //==================== Fields ====================
 private:
@@ -25,45 +26,37 @@ private:
   uint16_t m_SendBufferSize     = 0;
   uint16_t m_ReceiveBufferSize  = 0;
   uint16_t m_PayloadBuffersSize = 0;
-  char     m_WorkerName[32];
+  char     m_DeviceName[32];
   uint16_t m_EepromAddress_UCOPConfig = 0;
 
 //==================== Constructors ====================
 public:
   //-------------------- static --------------------
 
-  static ::EResult Create ( uint16_t      i_ReceiveBufferSize,
-                            uint16_t      i_SendBufferSize,
-                            uint16_t      i_PayloadBuffersSize,
-                            const char*   i_pWorkerName,
-                            uint8_t       i_WorkerNameLength,
-                            uint16_t      i_EepromAddress_UCOPConfig,
-                            TOBAConfig*&  o_pConfig);
-
   static ::EResult Create ( uint16_t            i_EepromAddress,
-                            TOBAConfig*&  o_pConfig);
+                            TOBADeviceConfig*&  o_pConfig);
 
   //-------------------- instance --------------------
 
-  TOBAConfig ();
+  TOBADeviceConfig ();
 
-  virtual ~TOBAConfig ();
+  virtual ~TOBADeviceConfig ();
 
 protected:
   //-------------------- instance --------------------
 
-  TOBAConfig (uint16_t    i_ReceiveBufferSize,
-              uint16_t    i_SendBufferSize,
-              uint16_t    i_PayloadBuffersSize,
-              const char* i_pWorkerName,
-              uint8_t     i_WorkerNameLength,
-              uint16_t    i_EepromAddress_UCOPConfig);
+  TOBADeviceConfig (uint16_t    i_ReceiveBufferSize,
+                    uint16_t    i_SendBufferSize,
+                    uint16_t    i_PayloadBuffersSize,
+                    const char* i_pDeviceName,
+                    uint8_t     i_DeviceNameLength,
+                    uint16_t    i_EepromAddress_UCOPConfig);
 
 private:
   //-------------------- static --------------------
 
-  static ::EResult CreateObject ( TOBAWorker::EWorkerType i_Type,
-                                  TOBAConfig*&            o_pConfig);
+  static ::EResult CreateObject ( TOBADevice::EDeviceType i_Type,
+                                  TOBADeviceConfig*&      o_pConfig);
 
 //==================== Properties ====================
 public:
@@ -76,10 +69,10 @@ public:
   uint16_t get_PayloadBuffersSize ();
   uint16_t get_ReceiveBufferSize ();
   uint16_t get_SendBufferSize ();
-  char*    get_WorkerName ();
-  uint8_t  get_WorkerNameLength ();
+  char*    get_DeviceName ();
+  uint8_t  get_DeviceNameLength ();
 
-  virtual TOBAWorker::EWorkerType get_WorkerType ();
+  virtual TOBADevice::EDeviceType get_DeviceType () = 0;
 
 //==================== Public Methods ====================
 public:

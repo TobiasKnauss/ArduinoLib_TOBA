@@ -1,0 +1,68 @@
+#######################################
+# Syntax Coloring Map For UCOP
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+TOBA	KEYWORD1
+TOBADevice	KEYWORD1
+TOBAWorker	KEYWORD1
+TOBAWorker_CustomIO	KEYWORD1
+TOBADeviceConfig	KEYWORD1
+TOBAWorkerConfig	KEYWORD1
+TOBAWorkerConfig_CustomIO	KEYWORD1
+EResult	KEYWORD1
+EDeviceType	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+AnalyzeData	KEYWORD2
+AnalyzeRequest	KEYWORD2
+Clear	KEYWORD2
+ClearBuffers	KEYWORD2
+ClearReqRepWoco	KEYWORD2
+Create	KEYWORD2
+CreateDevices	KEYWORD2
+CreateObject	KEYWORD2
+GetResultText		KEYWORD2
+GetTimestamp		KEYWORD2
+Init	KEYWORD2
+Print	KEYWORD2
+Print_EXEC	KEYWORD2
+ReadData	KEYWORD2
+ReadFromEEPROM	KEYWORD2
+ReadFromEEPROM_EXEC	KEYWORD2
+SendReply	KEYWORD2
+Verify	KEYWORD2
+Verify_EXEC	KEYWORD2
+Work	KEYWORD2
+WriteToEEPROM	KEYWORD2
+WriteToEEPROM_EXEC	KEYWORD2
+get_DeviceName	KEYWORD2
+get_DeviceNameLength	KEYWORD2
+get_DeviceType	KEYWORD2
+get_EepromAddress_UCOPConfig	KEYWORD2
+get_EepromConfigDataSize	KEYWORD2
+get_ExistsData	KEYWORD2
+get_ExistsRequest	KEYWORD2
+get_ExistsReply	KEYWORD2
+get_ExistsWork	KEYWORD2
+get_IsBusy	KEYWORD2
+get_IsWorking	KEYWORD2
+get_PayloadBuffersSize	KEYWORD2
+get_ReceiveBufferSize	KEYWORD2
+get_SendBufferSize	KEYWORD2
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+m_pConfig	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################

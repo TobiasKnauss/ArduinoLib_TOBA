@@ -3,36 +3,13 @@
 #include <IOHelper.h>
 
 #include "TOBAWorker_CustomIO.h"
-#include "TOBAConfig_CustomIO.h"
+#include "TOBAWorkerConfig_CustomIO.h"
 #include "TOBA_defines.h"
 
 //--------------------------------------------------------------------
-::EResult TOBAWorker_CustomIO::Create ( Stream*               i_pCommStream,
-                                        UCOP*                 i_pUCOP,
-                                        TOBAConfig*           i_pConfig,
-                                        TOBAWorker_CustomIO*& o_pWorker)
+TOBAWorker_CustomIO::TOBAWorker_CustomIO ()
+: TOBAWorker ()
 {
-  o_pWorker = nullptr;
-  TOBAWorker_CustomIO* pWorker = new TOBAWorker_CustomIO (i_pCommStream,
-                                                          i_pUCOP,
-                                                          i_pConfig);
-
-  ::EResult result = pWorker->Verify_EXEC ();
-  if (result != ::EResult::SUCCESS)
-  {
-    delete pWorker;
-    return result;
-  }
-
-  result = pWorker->CreateDevices_EXEC ();
-  if (result != ::EResult::SUCCESS)
-  {
-    delete pWorker;
-    return result;
-  }
-
-  o_pWorker = pWorker;
-  return ::EResult::SUCCESS;
 }
 
 //--------------------------------------------------------------------
@@ -41,20 +18,9 @@ TOBAWorker_CustomIO::~TOBAWorker_CustomIO ()
 }
 
 //--------------------------------------------------------------------
-TOBAWorker_CustomIO::TOBAWorker_CustomIO (Stream*     i_pCommStream,
-                                          UCOP*       i_pUCOP,
-                                          TOBAConfig* i_pConfig)
-: TOBAWorker (i_pCommStream,
-                    i_pUCOP,
-                    i_pConfig)
+TOBADevice::EDeviceType TOBAWorker_CustomIO::get_DeviceType ()
 {
-  m_pConfig = (TOBAConfig_CustomIO*)i_pConfig;
-}
-
-//--------------------------------------------------------------------
-TOBAWorker::EWorkerType TOBAWorker_CustomIO::get_WorkerType ()
-{
-  return EWorkerType::BuiltIn_CustomIO;
+  return EDeviceType::Worker_CustomIO;
 }
 
 //--------------------------------------------------------------------
@@ -69,7 +35,7 @@ TOBAWorker::EWorkerType TOBAWorker_CustomIO::get_WorkerType ()
 
   UCOP::EMessageResult messageResult = UCOP::EMessageResult::InProgress;
 
-  uint8_t pinNumber = 0;
+  uint8_t pinNumber;
   WOCO* pWORE = nullptr;  // WOrker REply
   switch (m_pWOCO->get_Command ())
   {
@@ -143,19 +109,21 @@ TOBAWorker::EWorkerType TOBAWorker_CustomIO::get_WorkerType ()
   }
 
   if (m_ReplyData.IsEmpty ())
-    return (::EResult)EResult::FAIL_TOBA_ReplyMissing;
+    return (::EResult)TOBA::EResult::FAIL_TOBA_ReplyMissing;
 
   return ::EResult::SUCCESS;
 }
 
 //--------------------------------------------------------------------
-::EResult TOBAWorker_CustomIO::CreateDevices_EXEC ()
+::EResult TOBAWorker_CustomIO::Init ( Stream*           i_pCommStream,
+                                      UCOP*             i_pUCOP,
+                                      TOBADeviceConfig* i_pConfig)
 {
-  return ::EResult::SUCCESS;
-}
+  ::EResult result = TOBADevice::Init (i_pCommStream, i_pUCOP, i_pConfig);
+  if (result != ::EResult::SUCCESS)
+    return result;
 
-//--------------------------------------------------------------------
-::EResult TOBAWorker_CustomIO::Verify_EXEC ()
-{
+  m_pConfig = (TOBAWorkerConfig_CustomIO*)i_pConfig;
+
   return ::EResult::SUCCESS;
 }

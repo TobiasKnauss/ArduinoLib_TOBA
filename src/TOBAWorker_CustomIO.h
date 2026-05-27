@@ -3,7 +3,7 @@
 
 #include "TOBAWorker.h"
 
-class TOBAConfig_CustomIO;
+class TOBAWorkerConfig_CustomIO;
 
 //--------------------------------------------------------------------
 class TOBAWorker_CustomIO
@@ -13,7 +13,7 @@ class TOBAWorker_CustomIO
 private:
   //-------------------- instance --------------------
 
-  TOBAConfig_CustomIO* m_pConfig = nullptr;
+  TOBAWorkerConfig_CustomIO* m_pConfig = nullptr;
 
 //==================== Constructors ====================
 public:
@@ -21,25 +21,20 @@ public:
 
   static ::EResult Create ( Stream*               i_pCommStream,
                             UCOP*                 i_pUCOP,
-                            TOBAConfig*           i_pConfig,
+                            TOBAWorkerConfig*     i_pConfig,
                             TOBAWorker_CustomIO*& o_pWorker);
 
   //-------------------- instance --------------------
 
+  TOBAWorker_CustomIO ();
+
   ~TOBAWorker_CustomIO ();
-
-protected:
-  //-------------------- instance --------------------
-
-  TOBAWorker_CustomIO ( Stream*     i_pCommStream,
-                        UCOP*       i_pUCOP,
-                        TOBAConfig* i_pConfig);
 
 //==================== Properties ====================
 public:
   //-------------------- instance --------------------
 
-  virtual EWorkerType get_WorkerType () override;
+  virtual EDeviceType get_DeviceType () override;
 
 //==================== Public Methods ====================
 public:
@@ -51,13 +46,9 @@ public:
 protected:
   //-------------------- instance --------------------
 
-  virtual ::EResult CreateDevices_EXEC () override;
-
-  virtual ::EResult Verify_EXEC () override;
-
-//==================== Private Methods ====================
-private:
-  //-------------------- instance --------------------
+  virtual ::EResult Init (Stream*           i_pCommStream,
+                          UCOP*             i_pUCOP,
+                          TOBADeviceConfig* i_pConfig) override;
 };
 
 #endif
