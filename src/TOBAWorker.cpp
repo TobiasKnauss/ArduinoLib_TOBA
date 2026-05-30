@@ -20,7 +20,8 @@
     return result;
 
   o_pWorker = (TOBAWorker*)pDevice;
-  return result;
+
+  return ::EResult::SUCCESS;
 }
 
 //--------------------------------------------------------------------
@@ -233,8 +234,8 @@ void TOBAWorker::ClearReqRepWoco ()
                                             m_pConfig->get_SendBufferSize (),
                                             replyMessageLength);
 
-  m_ReplyData.Clear ();
   memset (m_pPayloadSendBuffer, c_BufferDefaultValue, m_ReplyData.PayloadLength);
+  m_ReplyData.Clear ();
 
   #ifdef TOBA_DEBUG
   Serial << F("UCOP.ComposeReply() result=") << UCOP::GetResultText (result) << endl;
@@ -284,21 +285,27 @@ void TOBAWorker::ClearReqRepWoco ()
     return ::EResult::InProgress;
   }
 
-  m_ReplyData = UCOPData::CreateReplyData (m_RequestData, GetTimestamp (), messageResult);
-  m_ReplyData.SetPayloadInfo (m_pPayloadSendBuffer, m_PayloadBuffersSize);
+  UCOPData replyData = UCOPData::CreateReplyData (m_RequestData, GetTimestamp (), messageResult);
+  replyData.SetPayloadInfo (m_pPayloadSendBuffer, m_PayloadBuffersSize);
 
-  ::EResult result = pWORE->ComposeCommandData (m_ReplyData.pPayloadBuffer,
-                                                m_ReplyData.PayloadBufferLength,
-                                                m_ReplyData.PayloadLength);
+  ::EResult result = pWORE->ComposeCommandData (replyData.pPayloadBuffer,
+                                                replyData.PayloadBufferLength,
+                                                replyData.PayloadLength);
   #ifdef TOBA_DEBUG
-  Serial << F("WOCO.ComposeCommandData() result=") << UCOP::GetResultText (result) << endl;
+  Serial << F("WOCO.ComposeCommandData() result=") << WOCO::GetResultText (result) << endl;
+  Serial << F("PayloadSendBuffer:") << endl;
+  Memory_PrintLn (m_pPayloadSendBuffer, m_PayloadBuffersSize);
   #endif
 
   m_RequestData.Clear ();
   DeleteObject (m_pWOCO);
   DeleteObject (pWORE);
+  if (result != ::EResult::SUCCESS)
+    return result;
 
-  return result;
+  m_ReplyData = replyData;
+
+  return ::EResult::SUCCESS;
 }
 
 //--------------------------------------------------------------------

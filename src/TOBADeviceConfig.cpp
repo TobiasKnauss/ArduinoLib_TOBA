@@ -170,7 +170,7 @@ void TOBADeviceConfig::Print_EXEC ()
   Serial << F("ReceiveBufferSize        = ") << m_ReceiveBufferSize << endl;
   Serial << F("SendBufferSize           = ") << m_SendBufferSize << endl;
   Serial << F("PayloadBuffersSize       = ") << m_PayloadBuffersSize << endl;
-  Serial << F("DeviceName               = ") << _BUFPART (m_DeviceName, strnlen (m_DeviceName, sizeof (m_DeviceName))) << endl;
+  Serial << F("DeviceName               = ") << _BYTES (m_DeviceName, strnlen (m_DeviceName, sizeof (m_DeviceName))) << endl;
   Serial << F("EepromAddress_UCOPConfig = ") << m_EepromAddress_UCOPConfig << endl;
 }
 

@@ -1,43 +1,43 @@
-#ifndef TOBAWorkerConfig_h
-#define TOBAWorkerConfig_h
+#ifndef TOBAControllerConfig_h
+#define TOBAControllerConfig_h
 
 #include "TOBADeviceConfig.h"
 
 //--------------------------------------------------------------------
 //
-// The configuration of a basic TOBA worker.
+// The configuration of a basic TOBA controller.
 // EEPROM size: basic config size.
 //--------------------------------------------------------------------
-class TOBAWorkerConfig
+class TOBAControllerConfig
 : public TOBADeviceConfig
 {
 //==================== Constructors ====================
 public:
   //-------------------- static --------------------
 
-  static ::EResult Create ( uint16_t            i_ReceiveBufferSize,
-                            uint16_t            i_SendBufferSize,
-                            uint16_t            i_PayloadBuffersSize,
-                            const char*         i_pDeviceName,
-                            uint8_t             i_DeviceNameLength,
-                            uint16_t            i_EepromAddress_UCOPConfig,
-                            TOBAWorkerConfig*&  o_pConfig);
+  static ::EResult Create ( uint16_t                i_ReceiveBufferSize,
+                            uint16_t                i_SendBufferSize,
+                            uint16_t                i_PayloadBuffersSize,
+                            const char*             i_pDeviceName,
+                            uint8_t                 i_DeviceNameLength,
+                            uint16_t                i_EepromAddress_UCOPConfig,
+                            TOBAControllerConfig*&  o_pConfig);
 
   //-------------------- instance --------------------
 
-  TOBAWorkerConfig ();
+  TOBAControllerConfig ();
 
-  virtual ~TOBAWorkerConfig ();
+  virtual ~TOBAControllerConfig ();
 
 protected:
   //-------------------- instance --------------------
 
-  TOBAWorkerConfig (uint16_t    i_ReceiveBufferSize,
-                    uint16_t    i_SendBufferSize,
-                    uint16_t    i_PayloadBuffersSize,
-                    const char* i_pDeviceName,
-                    uint8_t     i_DeviceNameLength,
-                    uint16_t    i_EepromAddress_UCOPConfig);
+  TOBAControllerConfig (uint16_t    i_ReceiveBufferSize,
+                        uint16_t    i_SendBufferSize,
+                        uint16_t    i_PayloadBuffersSize,
+                        const char* i_pDeviceName,
+                        uint8_t     i_DeviceNameLength,
+                        uint16_t    i_EepromAddress_UCOPConfig);
 
 //==================== Properties ====================
 public:

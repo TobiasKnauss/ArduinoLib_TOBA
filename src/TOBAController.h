@@ -1,19 +1,19 @@
-#ifndef TOBAWorker_CustomIO_h
-#define TOBAWorker_CustomIO_h
+#ifndef TOBAController_h
+#define TOBAController_h
 
-#include "TOBAWorker.h"
+#include "TOBADevice.h"
 
-class TOBAWorkerConfig_CustomIO;
+class TOBAControllerConfig;
 
 //--------------------------------------------------------------------
-class TOBAWorker_CustomIO
-: public TOBAWorker
+class TOBAController
+: public TOBADevice
 {
 //==================== Fields ====================
 private:
   //-------------------- instance --------------------
 
-  TOBAWorkerConfig_CustomIO* m_pConfig = nullptr;
+  TOBAControllerConfig* m_pConfig = nullptr;
 
 //==================== Constructors ====================
 public:
@@ -21,26 +21,41 @@ public:
 
   static ::EResult Create ( Stream*               i_pCommStream,
                             UCOP*                 i_pUCOP,
-                            TOBAWorkerConfig*     i_pConfig,
-                            TOBAWorker_CustomIO*& o_pWorker);
+                            TOBAControllerConfig* i_pConfig,
+                            TOBAController*&      o_pDevice);
 
   //-------------------- instance --------------------
 
-  TOBAWorker_CustomIO ();
+  TOBAController ();
 
-  virtual ~TOBAWorker_CustomIO ();
+  virtual ~TOBAController ();
 
 //==================== Properties ====================
 public:
   //-------------------- instance --------------------
 
-  virtual EDeviceType get_DeviceType () override;
-
 //==================== Public Methods ====================
 public:
   //-------------------- instance --------------------
 
-  virtual ::EResult Work () override;
+  // Analyze the read data to find a reply message.
+  ::EResult AnalyzeData ();
+
+  // Analyse the received reply message to retrieve a worker reply.
+  ::EResult AnalyzeReply (WOCO*& o_pWORE);
+
+  // Clear all buffers, clear request and reply, and delete the worker command.
+  virtual void Clear () override;
+
+  // Clear request and reply.
+  void ClearReqRep ();
+
+  // Create a request from the given worker command.
+  ::EResult CreateRequest ( uint32_t  i_WorkerDeviceId,
+                            WOCO*     i_pWOCO);
+
+  // Send the request to the worker.
+  ::EResult SendRequest ();
 
 //==================== Protected Methods ====================
 protected:
