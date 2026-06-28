@@ -1,5 +1,6 @@
 #include "TOBADevice.h"
 #include "TOBADeviceConfig.h"
+#include "TOBAController.h"
 #include "TOBAWorker.h"
 #include "TOBAWorker_CustomIO.h"
 #include "TOBA_defines.h"
@@ -68,12 +69,25 @@ TOBADevice::TOBADevice ()
 
   switch (i_Type)
   {
+  case TOBADevice::EDeviceType::Controller:      o_pDevice = new TOBAController      (); break;
   case TOBADevice::EDeviceType::Worker:          o_pDevice = new TOBAWorker          (); break;
   case TOBADevice::EDeviceType::Worker_CustomIO: o_pDevice = new TOBAWorker_CustomIO (); break;
   default: return (::EResult)TOBA::EResult::FAIL_TOBA_DeviceTypeInvalid;
   }
 
   return ::EResult::SUCCESS;
+}
+
+//--------------------------------------------------------------------
+TOBADeviceConfig* TOBADevice::get_Config ()
+{
+  return m_pConfig;
+}
+
+//--------------------------------------------------------------------
+UCOPConfig* TOBADevice::get_UCOPConfig ()
+{
+  return m_pUCOPConfig;
 }
 
 //--------------------------------------------------------------------
@@ -121,10 +135,10 @@ void TOBADevice::Clear ()
 //--------------------------------------------------------------------
 void TOBADevice::ClearBuffers ()
 {
-  memset (m_pReceiveBuffer    , c_BufferDefaultValue, m_pConfig->get_ReceiveBufferSize () );
-  memset (m_pSendBuffer       , c_BufferDefaultValue, m_pConfig->get_SendBufferSize ()    );
-  memset (m_pPayloadRecvBuffer, c_BufferDefaultValue, m_pConfig->get_PayloadBuffersSize ());
-  memset (m_pPayloadSendBuffer, c_BufferDefaultValue, m_pConfig->get_PayloadBuffersSize ());
+  m_pReceiveBuffer    ->Clear ();
+  m_pSendBuffer       ->Clear ();
+  m_pPayloadRecvBuffer->Clear ();
+  m_pPayloadSendBuffer->Clear ();
 }
 
 //--------------------------------------------------------------------
@@ -138,6 +152,7 @@ uint32_t TOBADevice::GetTimestamp ()
 {
   if (m_pCommStream == nullptr)
     return (::EResult)TOBA::EResult::FAIL_TOBA_CommStream_NotReady;
+  m_DataAvailable = false;
   if (!m_pCommStream->available ())
     return ::EResult::SUCCESS;
 
@@ -148,14 +163,12 @@ uint32_t TOBADevice::GetTimestamp ()
   // Receive all available data
   while (m_pCommStream->available ())
   {
-    m_pReceiveBuffer[m_ReceiveBufferWriteIndex++] = m_pCommStream->read ();
-    if (m_ReceiveBufferWriteIndex >= m_pConfig->get_ReceiveBufferSize ())
-      m_ReceiveBufferWriteIndex = 0;
+    m_pReceiveBuffer->WriteValueAndMovePtr ((uint8_t)m_pCommStream->read ());
   }
 
   #ifdef TOBA_DEBUG
-  Serial << F("ReceiveBuffer: position = ") << m_ReceiveBufferWriteIndex << endl;
-  Memory_PrintLn (m_pReceiveBuffer, m_pConfig->get_ReceiveBufferSize ());
+  Serial << F("ReceiveBuffer: position = ") << m_pReceiveBuffer->get_CurrentWriteAddress () << endl;
+  m_pReceiveBuffer->Print (&Serial, true);
   #endif
 
   m_DataAvailable = true;
@@ -195,20 +208,20 @@ uint32_t TOBADevice::GetTimestamp ()
   }
 
   // Create buffers
-  if (!Memory_Allocate (m_pReceiveBuffer    , m_pConfig->get_ReceiveBufferSize () , c_BufferDefaultValue)) return ::EResult::FAIL_Buffer_Create;
-  if (!Memory_Allocate (m_pSendBuffer       , m_pConfig->get_SendBufferSize ()    , c_BufferDefaultValue)) return ::EResult::FAIL_Buffer_Create;
-  if (!Memory_Allocate (m_pPayloadRecvBuffer, m_pConfig->get_PayloadBuffersSize (), c_BufferDefaultValue)) return ::EResult::FAIL_Buffer_Create;
-  if (!Memory_Allocate (m_pPayloadSendBuffer, m_pConfig->get_PayloadBuffersSize (), c_BufferDefaultValue)) return ::EResult::FAIL_Buffer_Create;
+  if (!ByteBuffer::Create (m_pConfig->get_ReceiveBufferSize  (), c_BufferDefaultValue, true,  m_pReceiveBuffer    )) return ::EResult::FAIL_Buffer_Create;
+  if (!ByteBuffer::Create (m_pConfig->get_SendBufferSize     (), c_BufferDefaultValue, false, m_pSendBuffer       )) return ::EResult::FAIL_Buffer_Create;
+  if (!ByteBuffer::Create (m_pConfig->get_PayloadBuffersSize (), c_BufferDefaultValue, false, m_pPayloadRecvBuffer)) return ::EResult::FAIL_Buffer_Create;
+  if (!ByteBuffer::Create (m_pConfig->get_PayloadBuffersSize (), c_BufferDefaultValue, false, m_pPayloadSendBuffer)) return ::EResult::FAIL_Buffer_Create;
 
   #ifdef TOBA_DEBUG
-  Serial << F("ReceiveBuffer     Addr=") << _HEX4((uint16_t)m_pReceiveBuffer)     << F(" Len=") << m_pConfig->get_ReceiveBufferSize () << endl;
-  Memory_PrintLn (m_pReceiveBuffer, m_pConfig->get_ReceiveBufferSize ());
-  Serial << F("SendBuffer        Addr=") << _HEX4((uint16_t)m_pSendBuffer)        << F(" Len=") << m_pConfig->get_SendBufferSize () << endl;
-  Memory_PrintLn (m_pSendBuffer, m_pConfig->get_SendBufferSize ());
-  Serial << F("PayloadRecvBuffer Addr=") << _HEX4((uint16_t)m_pPayloadRecvBuffer) << F(" Len=") << m_pConfig->get_PayloadBuffersSize () << endl;
-  Memory_PrintLn (m_pPayloadRecvBuffer, m_pConfig->get_PayloadBuffersSize ());
-  Serial << F("PayloadSendBuffer Addr=") << _HEX4((uint16_t)m_pPayloadSendBuffer) << F(" Len=") << m_pConfig->get_PayloadBuffersSize () << endl;
-  Memory_PrintLn (m_pPayloadSendBuffer, m_pConfig->get_PayloadBuffersSize ());
+  Serial << F("ReceiveBuffer     Len = ") << _WIDTH (m_pReceiveBuffer    ->get_Length (), 5) << ":  ";
+  m_pReceiveBuffer->Print (&Serial, true);
+  Serial << F("SendBuffer        Len = ") << _WIDTH (m_pSendBuffer       ->get_Length (), 5) << ":  ";
+  m_pSendBuffer->Print (&Serial, true);
+  Serial << F("PayloadRecvBuffer Len = ") << _WIDTH (m_pPayloadRecvBuffer->get_Length (), 5) << ":  ";
+  m_pPayloadRecvBuffer->Print (&Serial, true);
+  Serial << F("PayloadSendBuffer Len = ") << _WIDTH (m_pPayloadSendBuffer->get_Length (), 5) << ":  ";
+  m_pPayloadSendBuffer->Print (&Serial, true);
   #endif
 
   return ::EResult::SUCCESS;

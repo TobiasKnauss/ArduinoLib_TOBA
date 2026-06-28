@@ -2,7 +2,7 @@
 
 #include <TOBADeviceConfig.h>
 
-const uint16_t c_EepromOffset = 0;
+const uint16_t c_EepromOffset = 16;
 
 void setup ()
 {
@@ -14,7 +14,7 @@ void setup ()
   Serial << F("TOBADeviceConfig.Create(..eepromAddress..), Result: ") << (int)result << " = " << TOBA::GetResultText (result) << endl;
   if (result == EResult::SUCCESS)
     pTOBADeviceConfig->Print ();
-  }
+}
 
 void loop ()
 {

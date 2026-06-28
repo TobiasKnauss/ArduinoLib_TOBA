@@ -6,7 +6,7 @@
 
 const uint16_t c_Sleep_ms = 1000;
 
-const uint16_t c_EepromAddr_WorkerConfig = 0;
+const uint16_t c_EepromAddr_WorkerConfig = 16;
 
 TOBADeviceConfig* m_pTOBADeviceConfig = nullptr;
 TOBAWorker* m_pTOBAWorker = nullptr;
@@ -23,15 +23,23 @@ void setup ()
   result = TOBADeviceConfig::Create (0, m_pTOBADeviceConfig);
   Serial << F("TOBADeviceConfig.Create(): ") << (int)result << " = " << TOBA::GetResultText (result) << endl;
 
-  result = TOBAWorker::Create (&Serial1, nullptr, m_pTOBADeviceConfig, m_pTOBAWorker);
+  result = TOBAWorker::Create (&Serial1, nullptr, (TOBAWorkerConfig*)m_pTOBADeviceConfig, m_pTOBAWorker);
   Serial << F("TOBAWorker.Create(): ") << (int)result << " = " << TOBA::GetResultText (result) << endl;
+
+  Serial << endl << F("TOBA Config:") << endl;
+  m_pTOBAWorker->get_Config ()->Print ();
+  Serial << endl << F("UCOP Config:") << endl;
+  m_pTOBAWorker->get_UCOPConfig ()->Print ();
 }
 
 //--------------------------------------------------------------------
 void loop ()
 {
   if (m_pTOBAWorker == nullptr)
+  {
+    Serial << "Setup failed!" << endl;
     return;
+  }
 
   EResult result;
 

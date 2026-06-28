@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <Streaming.h>
 #include <UCOP.h>
 #include <UCOPConfig.h>
 #include <WOCO_DeviceName.h>
@@ -11,8 +10,8 @@
 #include "TOBAController.h"
 #include "TOBAControllerConfig.h"
 
-const uint16_t c_EepromAddr_WorkerConfig = 0;
-const uint16_t c_EepromAddr_UcopConfig = 60;
+const uint16_t c_EepromAddr_WorkerConfig = 16;
+const uint16_t c_EepromAddr_UcopConfig   =  0;
 
 UCOPConfig*                 m_pUCOPConfig                 = nullptr;
 UCOP*                       m_pUCOP                       = nullptr;
@@ -37,7 +36,7 @@ void setup ()
   Serial1.begin (9600);
   delay (2000);
 
-  result = UCOPConfig::Create (true, true, false, 0x63691401, UCOP::EChecksumType::CRC8, m_pUCOPConfig);
+  result = UCOPConfig::Create (true, true, false, 0x63691401, m_pUCOPConfig);
   result = UCOP::Create (m_pUCOPConfig, m_pUCOP);
   Serial.println (TOBA::GetResultText (result));
 

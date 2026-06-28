@@ -34,6 +34,8 @@ public:
 public:
   //-------------------- instance --------------------
 
+  TOBAWorkerConfig* get_Config ();
+
   bool get_ExistsWork ();
 
   bool get_IsBusy ();
@@ -74,7 +76,7 @@ public:
   // It usually is sufficient to check if a worker command exists, because one was only created if the worker was not busy.
   // The work is only possible, if a worker command exists. The method contains a check to ensure that.
   // When the work is done, the request and the worker command are deleted and a reply is created.
-  virtual ::EResult Work ();
+  ::EResult Work ();
 
 //==================== Protected Methods ====================
 protected:
@@ -83,6 +85,9 @@ protected:
   virtual ::EResult Init (Stream*           i_pCommStream,
                           UCOP*             i_pUCOP,
                           TOBADeviceConfig* i_pConfig) override;
+
+  virtual ::EResult Work_EXEC ( WOCO*&                o_pWORE,
+                                UCOP::EMessageResult& o_MessageResult);
 };
 
 #endif

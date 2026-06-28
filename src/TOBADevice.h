@@ -3,13 +3,15 @@
 
 #include <FastCRC.h>
 #include <MemoryTools.h>
-#include <MemoryTools_RingBuffer.h>
+#include <ByteBuffer.h>
 #include <UCOP.h>
 #include <UCOPConfig.h>
 #include <UCOPData.h>
 #include <WOCO.h>
 
 #include "TOBA.h"
+
+using namespace MemoryTools;
 
 class TOBADeviceConfig;
 
@@ -41,15 +43,13 @@ protected:
   UCOPData    m_ReplyData;
   WOCO*       m_pWOCO = nullptr;  // WOrker COmmand
 
-  uint8_t* m_pReceiveBuffer     = nullptr;
-  uint8_t* m_pSendBuffer        = nullptr;
-  uint8_t* m_pPayloadRecvBuffer = nullptr;
-  uint8_t* m_pPayloadSendBuffer = nullptr;
-  uint16_t m_PayloadBuffersSize = 0;
+  ByteBuffer* m_pReceiveBuffer     = nullptr;
+  ByteBuffer* m_pSendBuffer        = nullptr;
+  ByteBuffer* m_pPayloadRecvBuffer = nullptr;
+  ByteBuffer* m_pPayloadSendBuffer = nullptr;
+  uint16_t    m_PayloadBuffersSize = 0;
 
-  uint16_t m_ReceiveBufferWriteIndex = 0;
-  uint16_t m_ReceiveBufferReadIndex  = 0;
-  bool     m_DataAvailable           = false;
+  bool m_DataAvailable = false;
 
 private:
   //-------------------- instance --------------------
@@ -85,6 +85,9 @@ private:
 //==================== Properties ====================
 public:
   //-------------------- instance --------------------
+
+  TOBADeviceConfig* get_Config ();
+  UCOPConfig*       get_UCOPConfig ();
 
   bool get_ExistsData ();
   bool get_ExistsRequest ();

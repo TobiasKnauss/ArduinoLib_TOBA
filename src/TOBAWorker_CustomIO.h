@@ -36,12 +36,6 @@ public:
 
   virtual EDeviceType get_DeviceType () override;
 
-//==================== Public Methods ====================
-public:
-  //-------------------- instance --------------------
-
-  virtual ::EResult Work () override;
-
 //==================== Protected Methods ====================
 protected:
   //-------------------- instance --------------------
@@ -49,6 +43,9 @@ protected:
   virtual ::EResult Init (Stream*           i_pCommStream,
                           UCOP*             i_pUCOP,
                           TOBADeviceConfig* i_pConfig) override;
+
+  virtual ::EResult Work_EXEC ( WOCO*&                o_pWORE,
+                                UCOP::EMessageResult& o_MessageResult) override;
 };
 
 #endif
