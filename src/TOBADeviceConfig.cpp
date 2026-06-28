@@ -241,13 +241,13 @@ void TOBADeviceConfig::Print_EXEC ()
   if (eepromConfigTotalSize + i_Address > EEPROM.length ())
     return ::EResult::FAIL_Eeprom_IndexOutsideRange;
 
-  uint16_t checksumFromEEPROM;
-  if (!EepromTools::ReadValueAndMovePtr (address, checksumFromEEPROM, c_InvertByteOrder))
-    return ::EResult::FAIL_Eeprom_ReadValue;
-
   if (eepromConfigDataSize != address - i_Address)
     return ::EResult::FAIL_Device_ConfigInvalid;
+
+  uint16_t checksumFromEEPROM;
   uint16_t checksum = 0;
+  if (!EepromTools::ReadValueAndMovePtr (address, checksumFromEEPROM, c_InvertByteOrder))
+    return ::EResult::FAIL_Eeprom_ReadValue;
   if (!EepromTools::CalcChecksumCRC16_From (i_Address, eepromConfigDataSize, checksum))
     return ::EResult::FAIL_Eeprom_CalcChecksum;
   if (checksum != checksumFromEEPROM)

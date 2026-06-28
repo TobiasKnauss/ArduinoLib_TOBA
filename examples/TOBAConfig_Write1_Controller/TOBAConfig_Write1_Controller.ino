@@ -10,11 +10,11 @@ const uint16_t m_SendBufferSize           = 50;
 const uint16_t m_PayloadBuffersSize       = 20;
 const char     m_DeviceName[]             = "Controller #1";
 const uint8_t  m_DeviceNameLength         = sizeof (m_DeviceName);
-const uint16_t m_EepromAddress_UCOPConfig = 60;
+const uint16_t m_EepromAddress_UCOPConfig = 0;
 
 void setup ()
 {
-  Serial.begin (9600);
+  Serial.begin (115200);
   delay (2000);
 
   TOBAControllerConfig* pTOBAControllerConfig1 = nullptr;

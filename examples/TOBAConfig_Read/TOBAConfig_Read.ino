@@ -6,7 +6,7 @@ const uint16_t c_EepromOffset = 16;
 
 void setup ()
 {
-  Serial.begin (9600);
+  Serial.begin (115200);
   delay (2000);
 
   TOBADeviceConfig* pTOBADeviceConfig = nullptr;
@@ -14,6 +14,12 @@ void setup ()
   Serial << F("TOBADeviceConfig.Create(..eepromAddress..), Result: ") << (int)result << " = " << TOBA::GetResultText (result) << endl;
   if (result == EResult::SUCCESS)
     pTOBADeviceConfig->Print ();
+
+  UCOPConfig* pUCOPConfig = nullptr;
+  result = UCOPConfig::Create (pTOBADeviceConfig->get_EepromAddress_UCOPConfig (), pUCOPConfig);
+  Serial << "UCOPConfig.Create(..eepromAddress..), Result: " << (int)result << " = " << UCOP::GetResultText (result) << endl;
+  if (result == EResult::SUCCESS)
+    pUCOPConfig->Print ();
 }
 
 void loop ()

@@ -16,7 +16,7 @@ void setup ()
 {
   EResult result;
 
-  Serial.begin (9600);
+  Serial.begin (115200);
   Serial1.begin (9600);
   delay (2000);
 
