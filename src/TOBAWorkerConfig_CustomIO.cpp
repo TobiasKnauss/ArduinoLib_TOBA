@@ -1,3 +1,5 @@
+#include <EEPROM.h>
+
 #include "TOBAWorkerConfig_CustomIO.h"
 
 //--------------------------------------------------------------------
@@ -110,8 +112,9 @@ void TOBAWorkerConfig_CustomIO::Print_EXEC ()
   TOBAWorkerConfig::Print_EXEC ();
 
   Serial << F("IOCount = ") << m_IOCount << endl;
+  Serial << F("IOPins = ");
   for (int index = 0; index < m_IOCount - 1; index++)
-    Serial << F("IOPins = ") << m_pIOPins[index] << ", ";
+    Serial << m_pIOPins[index] << ", ";
   if (m_IOCount == 0)
     Serial << F("---") << endl;
   else
@@ -121,17 +124,25 @@ void TOBAWorkerConfig_CustomIO::Print_EXEC ()
 //--------------------------------------------------------------------
 ::EResult TOBAWorkerConfig_CustomIO::ReadFromEEPROM_EXEC (uint16_t& io_Address)
 {
+  uint16_t startAddress = io_Address;
   ::EResult result = TOBAWorkerConfig::ReadFromEEPROM_EXEC (io_Address);
   if (result != ::EResult::SUCCESS)
     return result;
 
-  bool isOK = true;
-  isOK &= EEPROM_GetValueAndMovePtr (io_Address, m_IOCount);
   delete (m_pIOPins);
-  m_pIOPins = new uint8_t[m_IOCount];
-  isOK &= EEPROM_GetBytesAndMovePtr (io_Address, m_IOCount, m_pIOPins);
+  bool isOK = true;
+  isOK &= EepromTools::ReadValueAndMovePtr (io_Address, m_IOCount);
   if (!isOK)
-    return ::EResult::FAIL_EEPROM_GetValue;
+    return ::EResult::FAIL_Eeprom_ReadValue;
+
+  // re-check the config data size based on the just read input count:
+  if (get_EepromConfigDataSize () + startAddress > EEPROM.length ())
+    return ::EResult::FAIL_Eeprom_IndexOutsideRange;
+
+  m_pIOPins = new uint8_t[m_IOCount];
+  isOK &= EepromTools::ReadBytesAndMovePtr (io_Address, m_IOCount, m_pIOPins, false);
+  if (!isOK)
+    return ::EResult::FAIL_Eeprom_ReadValue;
 
   return ::EResult::SUCCESS;
 }
@@ -157,10 +168,10 @@ void TOBAWorkerConfig_CustomIO::Print_EXEC ()
     return result;
 
   bool isOK = true;
-  isOK &= EEPROM_SetValueAndMovePtr (io_Address, m_IOCount);
-  isOK &= EEPROM_SetBytesAndMovePtr (io_Address, m_IOCount, m_pIOPins);
+  isOK &= EepromTools::WriteValueAndMovePtr (io_Address, m_IOCount);
+  isOK &= EepromTools::WriteBytesAndMovePtr (io_Address, m_IOCount, m_pIOPins, false);
   if (!isOK)
-    return ::EResult::FAIL_EEPROM_GetValue;
+    return ::EResult::FAIL_Eeprom_WriteValue;
 
   return ::EResult::SUCCESS;
 }

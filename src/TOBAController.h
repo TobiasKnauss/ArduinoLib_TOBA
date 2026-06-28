@@ -34,6 +34,8 @@ public:
 public:
   //-------------------- instance --------------------
 
+  TOBAControllerConfig* get_Config ();
+
 //==================== Public Methods ====================
 public:
   //-------------------- instance --------------------

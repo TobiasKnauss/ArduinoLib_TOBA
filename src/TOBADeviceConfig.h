@@ -2,7 +2,7 @@
 #define TOBADeviceConfig_h
 
 #include <Result.h>
-#include <MemoryTools_EEPROM.h>
+#include <EepromTools.h>
 
 #include "TOBA.h"
 #include "TOBADevice.h"
@@ -17,6 +17,8 @@ class TOBADeviceConfig
 //==================== Fields ====================
 private:
   //-------------------- static --------------------
+
+  static const bool c_InvertByteOrder = true;
 
   static const uint8_t c_MinRecvSendBuffersSize        = 40;
   static const uint8_t c_MinPayloadRecvSendBuffersSize = 10;

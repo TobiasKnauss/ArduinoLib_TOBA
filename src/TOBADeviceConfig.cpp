@@ -1,6 +1,7 @@
 #include <EEPROM.h>
 
 #include "TOBADeviceConfig.h"
+#include "TOBAControllerConfig.h"
 #include "TOBAWorkerConfig.h"
 #include "TOBAWorkerConfig_CustomIO.h"
 
@@ -14,9 +15,9 @@
   uint32_t deviceTypeAsNumber;
   bool isOK = true;
   uint16_t address = i_EepromAddress;
-  isOK &= EEPROM_GetValueAndMovePtr (address, deviceTypeAsNumber);
+  isOK &= EepromTools::ReadValueAndMovePtr (address, deviceTypeAsNumber, c_InvertByteOrder);
   if (!isOK)
-    return ::EResult::FAIL_EEPROM_GetValue;
+    return ::EResult::FAIL_Eeprom_ReadValue;
 
   ::TOBADevice::EDeviceType deviceType = (::TOBADevice::EDeviceType)deviceTypeAsNumber;
   TOBADeviceConfig* pConfig = nullptr;
@@ -81,6 +82,7 @@ TOBADeviceConfig::TOBADeviceConfig (uint16_t    i_ReceiveBufferSize,
 
   switch (i_Type)
   {
+  case TOBADevice::EDeviceType::Controller:      o_pConfig = new TOBAControllerConfig      (); break;
   case TOBADevice::EDeviceType::Worker:          o_pConfig = new TOBAWorkerConfig          (); break;
   case TOBADevice::EDeviceType::Worker_CustomIO: o_pConfig = new TOBAWorkerConfig_CustomIO (); break;
   default: return (::EResult)TOBA::EResult::FAIL_TOBA_DeviceTypeInvalid;
@@ -149,17 +151,22 @@ void TOBADeviceConfig::Print ()
   uint8_t eepromConfigDataSize = get_EepromConfigDataSize ();
   uint8_t eepromConfigTotalSize = eepromConfigDataSize + get_EepromConfigChecksumSize ();
   if (eepromConfigTotalSize + i_Address > EEPROM.length ())
-    return ::EResult::FAIL_EEPROM_IndexOutsideRange;
+    return ::EResult::FAIL_Eeprom_IndexOutsideRange;
 
   uint16_t address = i_Address;
-  EEPROM_SetValueAndMovePtr (address, (uint32_t)get_DeviceType ());
+  EepromTools::WriteValueAndMovePtr (address, (uint32_t)get_DeviceType (), c_InvertByteOrder);
 
   ::EResult result = WriteToEEPROM_EXEC (address);
   if (result != ::EResult::SUCCESS)
     return result;
 
-  uint16_t checksum = EEPROM_CalcChecksumCRC16 (i_Address, eepromConfigDataSize);
-  EEPROM_SetValueAndMovePtr (address, checksum);
+  if (eepromConfigDataSize != address - i_Address)
+    return ::EResult::FAIL_Device_ConfigInvalid;
+  uint16_t checksum = 0;
+  if (!EepromTools::CalcChecksumCRC16_From (i_Address, eepromConfigDataSize, checksum))
+    return ::EResult::FAIL_Eeprom_CalcChecksum;
+
+  EepromTools::WriteValueAndMovePtr (address, checksum, c_InvertByteOrder);
 
   return ::EResult::SUCCESS;
 }
@@ -178,13 +185,13 @@ void TOBADeviceConfig::Print_EXEC ()
 ::EResult TOBADeviceConfig::ReadFromEEPROM_EXEC (uint16_t& io_Address)
 {
   bool isOK = true;
-  isOK &= EEPROM_GetValueAndMovePtr (io_Address, m_ReceiveBufferSize);
-  isOK &= EEPROM_GetValueAndMovePtr (io_Address, m_SendBufferSize);
-  isOK &= EEPROM_GetValueAndMovePtr (io_Address, m_PayloadBuffersSize);
-  isOK &= EEPROM_GetBytesAndMovePtr (io_Address, sizeof (m_DeviceName), (uint8_t*)m_DeviceName);
-  isOK &= EEPROM_GetValueAndMovePtr (io_Address, m_EepromAddress_UCOPConfig);
+  isOK &= EepromTools::ReadValueAndMovePtr (io_Address, m_ReceiveBufferSize,  c_InvertByteOrder);
+  isOK &= EepromTools::ReadValueAndMovePtr (io_Address, m_SendBufferSize,     c_InvertByteOrder);
+  isOK &= EepromTools::ReadValueAndMovePtr (io_Address, m_PayloadBuffersSize, c_InvertByteOrder);
+  isOK &= EepromTools::ReadBytesAndMovePtr (io_Address, sizeof (m_DeviceName), (uint8_t*)m_DeviceName, false);
+  isOK &= EepromTools::ReadValueAndMovePtr (io_Address, m_EepromAddress_UCOPConfig, c_InvertByteOrder);
   if (!isOK)
-    return ::EResult::FAIL_EEPROM_GetValue;
+    return ::EResult::FAIL_Eeprom_ReadValue;
 
   return ::EResult::SUCCESS;
 }
@@ -204,13 +211,13 @@ void TOBADeviceConfig::Print_EXEC ()
 ::EResult TOBADeviceConfig::WriteToEEPROM_EXEC (uint16_t& io_Address)
 {
   bool isOK = true;
-  isOK &= EEPROM_SetValueAndMovePtr (io_Address, m_ReceiveBufferSize);
-  isOK &= EEPROM_SetValueAndMovePtr (io_Address, m_SendBufferSize);
-  isOK &= EEPROM_SetValueAndMovePtr (io_Address, m_PayloadBuffersSize);
-  isOK &= EEPROM_SetBytesAndMovePtr (io_Address, sizeof (m_DeviceName), (uint8_t*)m_DeviceName);
-  isOK &= EEPROM_SetValueAndMovePtr (io_Address, m_EepromAddress_UCOPConfig);
+  isOK &= EepromTools::WriteValueAndMovePtr (io_Address, m_ReceiveBufferSize,  c_InvertByteOrder);
+  isOK &= EepromTools::WriteValueAndMovePtr (io_Address, m_SendBufferSize,     c_InvertByteOrder);
+  isOK &= EepromTools::WriteValueAndMovePtr (io_Address, m_PayloadBuffersSize, c_InvertByteOrder);
+  isOK &= EepromTools::WriteBytesAndMovePtr (io_Address, sizeof (m_DeviceName), (uint8_t*)m_DeviceName, false);
+  isOK &= EepromTools::WriteValueAndMovePtr (io_Address, m_EepromAddress_UCOPConfig, c_InvertByteOrder);
   if (!isOK)
-    return ::EResult::FAIL_EEPROM_SetValue;
+    return ::EResult::FAIL_Eeprom_WriteValue;
 
   return ::EResult::SUCCESS;
 }
@@ -221,17 +228,28 @@ void TOBADeviceConfig::Print_EXEC ()
   uint8_t eepromConfigDataSize = get_EepromConfigDataSize ();
   uint8_t eepromConfigTotalSize = eepromConfigDataSize + get_EepromConfigChecksumSize ();
   if (eepromConfigTotalSize + i_Address > EEPROM.length ())
-    return ::EResult::FAIL_EEPROM_IndexOutsideRange;
+    return ::EResult::FAIL_Eeprom_IndexOutsideRange;
 
-  uint16_t address = i_Address + 4;
+  uint16_t address = i_Address + sizeof (TOBADevice::EDeviceType);
   ::EResult result = ReadFromEEPROM_EXEC (address);
   if (result != ::EResult::SUCCESS)
     return result;
 
-  uint16_t checksumFromEEPROM;
-  EEPROM_GetValueAndMovePtr (address, checksumFromEEPROM);
+  // re-check the config data size based on the just read data.
+  eepromConfigDataSize = get_EepromConfigDataSize (); // re-calc for correct EEPROM checksum calcualtion.
+  eepromConfigTotalSize = eepromConfigDataSize + get_EepromConfigChecksumSize ();
+  if (eepromConfigTotalSize + i_Address > EEPROM.length ())
+    return ::EResult::FAIL_Eeprom_IndexOutsideRange;
 
-  uint16_t checksum = EEPROM_CalcChecksumCRC16 (i_Address, eepromConfigDataSize);
+  uint16_t checksumFromEEPROM;
+  if (!EepromTools::ReadValueAndMovePtr (address, checksumFromEEPROM, c_InvertByteOrder))
+    return ::EResult::FAIL_Eeprom_ReadValue;
+
+  if (eepromConfigDataSize != address - i_Address)
+    return ::EResult::FAIL_Device_ConfigInvalid;
+  uint16_t checksum = 0;
+  if (!EepromTools::CalcChecksumCRC16_From (i_Address, eepromConfigDataSize, checksum))
+    return ::EResult::FAIL_Eeprom_CalcChecksum;
   if (checksum != checksumFromEEPROM)
     return ::EResult::FAIL_Device_ConfigChecksumWrong;
 
