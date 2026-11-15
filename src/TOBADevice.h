@@ -3,7 +3,7 @@
 
 #include <FastCRC.h>
 #include <MemoryTools.h>
-#include <ByteBuffer.h>
+#include <BytesBuffer.h>
 #include <UCOP.h>
 #include <UCOPConfig.h>
 #include <UCOPData.h>
@@ -43,11 +43,11 @@ protected:
   UCOPData    m_ReplyData;
   WOCO*       m_pWOCO = nullptr;  // WOrker COmmand
 
-  ByteBuffer* m_pReceiveBuffer     = nullptr;
-  ByteBuffer* m_pSendBuffer        = nullptr;
-  ByteBuffer* m_pPayloadRecvBuffer = nullptr;
-  ByteBuffer* m_pPayloadSendBuffer = nullptr;
-  uint16_t    m_PayloadBuffersSize = 0;
+  BytesBuffer*  m_pReceiveBuffer     = nullptr;
+  BytesBuffer*  m_pSendBuffer        = nullptr;
+  BytesBuffer*  m_pPayloadRecvBuffer = nullptr;
+  BytesBuffer*  m_pPayloadSendBuffer = nullptr;
+  uint16_t      m_PayloadBuffersSize = 0;
 
   bool m_DataAvailable = false;
 

@@ -208,10 +208,10 @@ uint32_t TOBADevice::GetTimestamp ()
   }
 
   // Create buffers
-  if (!ByteBuffer::Create (m_pConfig->get_ReceiveBufferSize  (), c_BufferDefaultValue, true,  m_pReceiveBuffer    )) return ::EResult::FAIL_Buffer_Create;
-  if (!ByteBuffer::Create (m_pConfig->get_SendBufferSize     (), c_BufferDefaultValue, false, m_pSendBuffer       )) return ::EResult::FAIL_Buffer_Create;
-  if (!ByteBuffer::Create (m_pConfig->get_PayloadBuffersSize (), c_BufferDefaultValue, false, m_pPayloadRecvBuffer)) return ::EResult::FAIL_Buffer_Create;
-  if (!ByteBuffer::Create (m_pConfig->get_PayloadBuffersSize (), c_BufferDefaultValue, false, m_pPayloadSendBuffer)) return ::EResult::FAIL_Buffer_Create;
+  if (!BytesBuffer::Create (m_pConfig->get_ReceiveBufferSize  (), c_BufferDefaultValue, true,  m_pReceiveBuffer    )) return ::EResult::FAIL_Buffer_Create;
+  if (!BytesBuffer::Create (m_pConfig->get_SendBufferSize     (), c_BufferDefaultValue, false, m_pSendBuffer       )) return ::EResult::FAIL_Buffer_Create;
+  if (!BytesBuffer::Create (m_pConfig->get_PayloadBuffersSize (), c_BufferDefaultValue, false, m_pPayloadRecvBuffer)) return ::EResult::FAIL_Buffer_Create;
+  if (!BytesBuffer::Create (m_pConfig->get_PayloadBuffersSize (), c_BufferDefaultValue, false, m_pPayloadSendBuffer)) return ::EResult::FAIL_Buffer_Create;
 
   #ifdef TOBA_DEBUG
   Serial << F("ReceiveBuffer     Len = ") << _WIDTH (m_pReceiveBuffer    ->get_Length (), 5) << ":  ";
