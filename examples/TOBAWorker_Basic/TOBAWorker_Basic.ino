@@ -6,10 +6,12 @@
 
 const uint16_t c_Sleep_ms = 1000;
 
-const uint16_t c_EepromAddr_WorkerConfig = 16;
+const uint16_t c_EepromAddr_TOBADeviceConfig = 16;
 
 TOBADeviceConfig* m_pTOBADeviceConfig = nullptr;
 TOBAWorker* m_pTOBAWorker = nullptr;
+
+uint32_t loopExec = 0;
 
 //--------------------------------------------------------------------
 void setup ()
@@ -20,7 +22,7 @@ void setup ()
   Serial1.begin (9600);
   delay (2000);
 
-  result = TOBADeviceConfig::Create (0, m_pTOBADeviceConfig);
+  result = TOBADeviceConfig::Create (c_EepromAddr_TOBADeviceConfig, m_pTOBADeviceConfig);
   Serial << F("TOBADeviceConfig.Create(): ") << (int)result << " = " << TOBA::GetResultText (result) << endl;
 
   result = TOBAWorker::Create (&Serial1, nullptr, (TOBAWorkerConfig*)m_pTOBADeviceConfig, m_pTOBAWorker);
@@ -30,6 +32,7 @@ void setup ()
   m_pTOBAWorker->get_Config ()->Print ();
   Serial << endl << F("UCOP Config:") << endl;
   m_pTOBAWorker->get_UCOPConfig ()->Print ();
+  Serial << endl;
 }
 
 //--------------------------------------------------------------------
@@ -41,20 +44,23 @@ void loop ()
     return;
   }
 
+  loopExec++;
   EResult result;
 
   // Read data from the stored stream and write it into a buffer.
   result = m_pTOBAWorker->ReadData ();
-  Serial << F("ReadData(): ") << TOBA::GetResultText (result) << endl;
-  Serial << "Data exists: " << m_pTOBAWorker->get_ExistsData () << endl;;
+  Serial << loopExec << F(": ReadData(): ") << TOBA::GetResultText (result) << endl;
 
   // Analyze the read data to find a request message.
   // This may only be done, if no active request, work, or reply exists; otherwise, an active request will be overwritten.
-  if (m_pTOBAWorker->get_ExistsData ()
-  &&  !m_pTOBAWorker->get_IsBusy ())
+  if (m_pTOBAWorker->get_ExistsData ())
   {
-    result = m_pTOBAWorker->AnalyzeData ();
-    Serial << F("AnalyzeData(): ") << TOBA::GetResultText (result) << endl;
+    Serial << loopExec << F(": Data exists: ") << m_pTOBAWorker->get_ExistsData () << endl;
+    if (!m_pTOBAWorker->get_IsBusy ())
+    {
+      result = m_pTOBAWorker->AnalyzeData ();
+      Serial << loopExec << F(": AnalyzeData(): ") << TOBA::GetResultText (result) << endl;
+    }
   }
 
   // Analyse the received request to retrieve a worker command.
@@ -62,7 +68,7 @@ void loop ()
   if (m_pTOBAWorker->get_ExistsRequest ())
   {
     result = m_pTOBAWorker->AnalyzeRequest ();
-    Serial << F("AnalyzeRequest(): ") << TOBA::GetResultText (result) << endl;
+    Serial << loopExec << F(": AnalyzeRequest(): ") << TOBA::GetResultText (result) << endl;
   }
 
   // Execute the received worker command and create a reply.
@@ -70,7 +76,7 @@ void loop ()
   if (m_pTOBAWorker->get_ExistsWork ())
   {
     result = m_pTOBAWorker->Work ();
-    Serial << F("Work(): ") << TOBA::GetResultText (result) << endl;
+    Serial << loopExec << F(": Work(): ") << TOBA::GetResultText (result) << endl;
   }
 
   // Send the reply that was created during analysis or work.
@@ -78,9 +84,9 @@ void loop ()
   if (m_pTOBAWorker->get_ExistsReply ())
   {
     result = m_pTOBAWorker->SendReply ();
-    Serial << F("SendReply(): ") << TOBA::GetResultText (result) << endl;
+    Serial << loopExec << F(": SendReply(): ") << TOBA::GetResultText (result) << endl;
   }
 
-  Serial << F("Sleeping ") << c_Sleep_ms << " ms." << endl << endl;
+  Serial << loopExec << F(": Sleeping ") << c_Sleep_ms << " ms." << endl << endl;
   delay (c_Sleep_ms);
 }

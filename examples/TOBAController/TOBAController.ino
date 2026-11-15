@@ -11,15 +11,17 @@
 
 const uint16_t c_Sleep_ms = 1000;
 
-const uint16_t c_EepromAddr_ControllerConfig = 16;
+const uint16_t c_EepromAddr_TOBADeviceConfig = 16;
 
 WOCO* m_pWOCO = nullptr;
 WOCO* m_pWORE = nullptr;
 TOBADeviceConfig* m_pTOBADeviceConfig = nullptr;
 TOBAController*   m_pTOBAController   = nullptr;
 
-uint8_t m_CommandLength = 0;
-uint8_t m_CommandBuffer[20];
+bool m_IsCommandComplete = false;
+BytesBuffer* m_pCommandBuffer = nullptr;
+
+uint32_t loopExec = 0;
 
 //--------------------------------------------------------------------
 void setup ()
@@ -30,7 +32,10 @@ void setup ()
   Serial1.begin (9600);
   delay (2000);
 
-  result = TOBADeviceConfig::Create (0, m_pTOBADeviceConfig);
+  bool isOK = BytesBuffer::Create (20, 0xFF, false, m_pCommandBuffer);
+  Serial << F("ByteBuffer.Create(): ") << isOK << endl;
+
+  result = TOBADeviceConfig::Create (c_EepromAddr_TOBADeviceConfig, m_pTOBADeviceConfig);
   Serial << F("TOBADeviceConfig.Create(): ") << (int)result << " = " << TOBA::GetResultText (result) << endl;
 
   result = TOBAController::Create (&Serial1, nullptr, (TOBAControllerConfig*)m_pTOBADeviceConfig, m_pTOBAController);
@@ -40,6 +45,7 @@ void setup ()
   m_pTOBAController->get_Config ()->Print ();
   Serial << endl << F("UCOP Config:") << endl;
   m_pTOBAController->get_UCOPConfig ()->Print ();
+  Serial << endl;
 }
 
 //--------------------------------------------------------------------
@@ -51,38 +57,49 @@ void loop ()
     return;
   }
 
+  loopExec++;
   EResult result;
 
   if (Serial.available ())
   {
-    Serial << "Serial available: " << Serial.available () << endl;
+    Serial << loopExec << F(": Serial available: ") << Serial.available () << endl;
 
     // Receive all available data
-    while (Serial.available () > 0
-        && m_CommandLength < sizeof (m_CommandBuffer))
+    bool isOK = true;
+    while (Serial.available () > 0)
     {
-      m_CommandBuffer[m_CommandLength++] = Serial.read ();
+      uint8_t value = Serial.read ();
+      m_IsCommandComplete = value == 0xFF;
+      if (m_IsCommandComplete)
+        break;
+      isOK &= m_pCommandBuffer->WriteValueAndMovePtr (value);
+    }
+    if (!isOK)
+    {
+      m_pCommandBuffer->Clear ();
+      m_pCommandBuffer->SetWritePointer (0);
     }
   }
 
   if (m_pWOCO == nullptr
-  &&  m_CommandLength > 0)
+  &&  m_IsCommandComplete)
   {
-    Serial << F("CommandBuffer: bytes used = ") << m_CommandLength << endl;
-    Memory_PrintLn (m_CommandBuffer, sizeof (m_CommandBuffer));
+    m_pCommandBuffer->SetWritePointer (0);
+    m_pCommandBuffer->SetReadPointer (0);
+    Serial << loopExec << F(": CommandBuffer: bytes used = ") << m_pCommandBuffer->get_CurrentWriteAddress () << endl;
+    m_pCommandBuffer->Print (&Serial, true);
 
-    uint8_t* pCommandBufferCurrentPos = m_CommandBuffer;
     uint32_t workerDeviceId     = 0;
     uint16_t wocoCommandNum     = 0;
     bool     wocoActionIsWrite  = false;
     uint8_t  pinNumber          = 0;
     uint8_t  pinMode            = 0;
     bool     pinState           = false;
-    RingBuffer_GetValueAndMovePtr (m_CommandBuffer, sizeof (m_CommandBuffer), pCommandBufferCurrentPos, workerDeviceId);
-    RingBuffer_GetValueAndMovePtr (m_CommandBuffer, sizeof (m_CommandBuffer), pCommandBufferCurrentPos, wocoCommandNum);
-    RingBuffer_GetValueAndMovePtr (m_CommandBuffer, sizeof (m_CommandBuffer), pCommandBufferCurrentPos, wocoActionIsWrite);
+    bool isOK = m_pCommandBuffer->ReadValueAndMovePtr (workerDeviceId, true);
+        isOK &= m_pCommandBuffer->ReadValueAndMovePtr (wocoCommandNum, true);
+        isOK &= m_pCommandBuffer->ReadValueAndMovePtr (wocoActionIsWrite);
     WOCO::ECommand wocoCommand = (WOCO::ECommand)wocoCommandNum;
-    Serial << "WOCO: " << wocoCommandNum << ", " << (uint16_t)m_pWOCO << endl;
+    Serial << loopExec << F(": CommandBuffer.ReadValueAndMovePtr() ") << isOK << ", WOCO: " << wocoCommandNum << endl;
 
     switch (wocoCommand)
     {
@@ -99,10 +116,10 @@ void loop ()
       break;
 
     case WOCO::ECommand::DigitalIOMode:
-      RingBuffer_GetValueAndMovePtr (m_CommandBuffer, sizeof (m_CommandBuffer), pCommandBufferCurrentPos, pinNumber);
+      m_pCommandBuffer->ReadValueAndMovePtr (pinNumber);
       if (wocoActionIsWrite)
       {
-        RingBuffer_GetValueAndMovePtr (m_CommandBuffer, sizeof (m_CommandBuffer), pCommandBufferCurrentPos, pinMode);
+        m_pCommandBuffer->ReadValueAndMovePtr (pinMode);
         m_pWOCO = WOCO_DigitalIOMode::CreateWriteRequest (pinNumber, pinMode);
       }
       else
@@ -110,10 +127,10 @@ void loop ()
       break;
 
     case WOCO::ECommand::DigitalIOState:
-      RingBuffer_GetValueAndMovePtr (m_CommandBuffer, sizeof (m_CommandBuffer), pCommandBufferCurrentPos, pinNumber);
+      m_pCommandBuffer->ReadValueAndMovePtr (pinNumber);
       if (wocoActionIsWrite)
       {
-        RingBuffer_GetValueAndMovePtr (m_CommandBuffer, sizeof (m_CommandBuffer), pCommandBufferCurrentPos, pinState);
+        m_pCommandBuffer->ReadValueAndMovePtr (pinState);
         m_pWOCO = WOCO_DigitalIOState::CreateWriteRequest (pinNumber, pinState);
       }
       else
@@ -121,46 +138,52 @@ void loop ()
       break;
 
     default:
-      Serial << "unsupported WOCO" << endl;
+      Serial << loopExec << F(": unsupported WOCO") << endl;
       break;
     }
 
-    Serial << "WOCO: " << (uint16_t)m_pWOCO << endl;
+    m_pCommandBuffer->Clear ();
+
+    if (m_pWOCO != nullptr)
+    {
+      Serial << "WOCO: " << endl;
+      m_pWOCO->Print ();
+    }
 
     if (m_pWOCO != nullptr
     &&  !m_pTOBAController->get_ExistsRequest ())
     {
       result = m_pTOBAController->CreateRequest (workerDeviceId, m_pWOCO);
-      Serial << F("CreateRequest(): ") << TOBA::GetResultText (result) << endl;
+      Serial << loopExec << F(": CreateRequest(): ") << TOBA::GetResultText (result) << endl;
 
       // Send the request.
       if (m_pTOBAController->get_ExistsRequest ())
       {
         result = m_pTOBAController->SendRequest ();
-        Serial << F("SendRequest(): ") << TOBA::GetResultText (result) << endl;
+        Serial << loopExec << F(": SendRequest(): ") << TOBA::GetResultText (result) << endl;
       }
     }
   }
 
   // Read data from the stored stream and write it into a buffer.
   result = m_pTOBAController->ReadData ();
-  Serial << F("ReadData(): ") << TOBA::GetResultText (result) << endl;
+  Serial << loopExec << F(": ReadData(): ") << TOBA::GetResultText (result) << endl;
 
   // Analyze the read data to find a request message.
   // This may only be done, if no active request, work, or reply exists; otherwise, an active request will be overwritten.
   if (m_pTOBAController->get_ExistsData ())
   {
     result = m_pTOBAController->AnalyzeData ();
-    Serial << F("AnalyzeData(): ") << TOBA::GetResultText (result) << endl;
+    Serial << loopExec << F(": AnalyzeData(): ") << TOBA::GetResultText (result) << endl;
   }
 
   // Analyse the received reply to retrieve a worker reply.
   if (m_pTOBAController->get_ExistsReply ())
   {
     result = m_pTOBAController->AnalyzeReply (m_pWORE);
-    Serial << F("AnalyzeReply(): ") << TOBA::GetResultText (result) << endl;
+    Serial << loopExec << F(": AnalyzeReply(): ") << TOBA::GetResultText (result) << endl;
   }
 
-  Serial << F("Sleeping ") << c_Sleep_ms << " ms." << endl << endl;
+  Serial << loopExec << F(": Sleeping ") << c_Sleep_ms << " ms." << endl << endl;
   delay (c_Sleep_ms);
 }
