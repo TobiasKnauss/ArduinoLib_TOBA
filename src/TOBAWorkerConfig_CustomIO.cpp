@@ -107,18 +107,18 @@ TOBADevice::EDeviceType TOBAWorkerConfig_CustomIO::get_DeviceType ()
 }
 
 //--------------------------------------------------------------------
-void TOBAWorkerConfig_CustomIO::Print_EXEC ()
+void TOBAWorkerConfig_CustomIO::Print_EXEC (Stream* i_pOutput)
 {
-  TOBAWorkerConfig::Print_EXEC ();
+  TOBAWorkerConfig::Print_EXEC (i_pOutput);
 
-  Serial << F("IOCount = ") << m_IOCount << endl;
-  Serial << F("IOPins = ");
+  *i_pOutput << F("IOCount = ") << m_IOCount << endl;
+  *i_pOutput << F("IOPins = ");
   for (int index = 0; index < m_IOCount - 1; index++)
-    Serial << m_pIOPins[index] << ", ";
+    *i_pOutput << m_pIOPins[index] << ", ";
   if (m_IOCount == 0)
-    Serial << F("---") << endl;
+    *i_pOutput << F("---") << endl;
   else
-    Serial << m_pIOPins[m_IOCount - 1] << endl;
+    *i_pOutput << m_pIOPins[m_IOCount - 1] << endl;
 }
 
 //--------------------------------------------------------------------

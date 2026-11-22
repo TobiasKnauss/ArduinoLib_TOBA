@@ -80,7 +80,7 @@ public:
 public:
   //-------------------- instance --------------------
 
-  void Print ();
+  bool Print (Stream* i_pOutput);
 
   ::EResult WriteToEEPROM (uint16_t i_Address);
 
@@ -88,7 +88,7 @@ public:
 protected:
   //-------------------- instance --------------------
 
-  virtual void Print_EXEC ();
+  virtual void Print_EXEC (Stream* i_pOutput);
 
   virtual ::EResult ReadFromEEPROM_EXEC (uint16_t& io_Address);
 

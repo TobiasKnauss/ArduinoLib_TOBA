@@ -62,22 +62,19 @@ TOBAControllerConfig* TOBAController::get_Config ()
   }
 
   #ifdef TOBA_DEBUG
-  Serial << F("UCOP.SearchMessage() result=") << UCOP::GetResultText (result) << endl;
+  if (m_pLogStream != nullptr)
+  {
+    *m_pLogStream << F("UCOP.SearchMessage() result=") << UCOP::GetResultText (result) << endl;
 
-  Serial << F("Message Type is Reply: ") << receivedMessageTypeIsReply          << endl;
-  Serial << F("Action is Write:       ") << receivedData.ActionIsWrite          << endl;
-  Serial << F("Remote Device Id:      ") << _HEX8 (receivedData.RemoteDeviceId) << endl;
-  Serial << F("Message Id:            ") << receivedData.MessageId              << endl;
-  Serial << F("Timestamp:             ") << receivedData.Timestamp              << endl;
-  Serial << F("CommandId:             ") << receivedData.CommandId              << endl;
-  Serial << F("Result:                ") << (uint8_t)receivedData.MessageResult << endl;
-  Serial << F("Payload Data Length:   ") << receivedData.PayloadLength          << endl;
-  Serial << F("Message Length:        ") << receivedMessageLength               << endl;
+    *m_pLogStream << F("Message Type is Reply:  ") << receivedMessageTypeIsReply << endl;
+    receivedData.Print (m_pLogStream);
+    *m_pLogStream << F("Message Length:         ") << receivedMessageLength << endl;
 
-  Serial << F("ReceiveBuffer:") << endl;
-  m_pReceiveBuffer->Print (&Serial, true);
-  Serial << F("PayloadRecvBuffer: bytes used = ") << receivedData.PayloadLength << endl;
-  m_pPayloadRecvBuffer->Print (&Serial, true);
+    *m_pLogStream << F("ReceiveBuffer:") << endl;
+    m_pReceiveBuffer->Print (m_pLogStream, true);
+    *m_pLogStream << F("PayloadRecvBuffer: bytes used = ") << receivedData.PayloadLength << endl;
+    m_pPayloadRecvBuffer->Print (m_pLogStream, true);
+  }
   #endif
 
   if ((UCOP::EResult)result == UCOP::EResult::FAIL_UCOP_Message_NotFound)
@@ -94,13 +91,15 @@ TOBAControllerConfig* TOBAController::get_Config ()
   if (!receivedMessageTypeIsReply)
   {
     #ifdef TOBA_DEBUG
-    Serial << F("Message is no reply, although it should be. Nothing to do.") << endl;
+    if (m_pLogStream != nullptr)
+      *m_pLogStream << F("Message is no reply, although it should be. Nothing to do.") << endl;
     #endif
     return ::EResult::SUCCESS;
   }
 
   #ifdef TOBA_DEBUG
-  Serial << F("Message is a reply.") << endl;
+  if (m_pLogStream != nullptr)
+    *m_pLogStream << F("Message is a reply.") << endl;
   #endif
   m_ReplyData = receivedData;
 
@@ -125,7 +124,8 @@ TOBAControllerConfig* TOBAController::get_Config ()
                          m_ReplyData.ActionIsWrite,
                          pWORE);
   #ifdef TOBA_DEBUG
-  Serial << F("WOCO.Create() result=") << WOCO::GetResultText (result) << endl;
+  if (m_pLogStream != nullptr)
+    *m_pLogStream << F("WOCO.Create() result=") << WOCO::GetResultText (result) << endl;
   #endif
 
   if (result != ::EResult::SUCCESS)
@@ -139,13 +139,17 @@ TOBAControllerConfig* TOBAController::get_Config ()
   result = pWORE->AnalyzeCommandData (m_RequestData.pPayloadBuffer,
                                       m_RequestData.PayloadLength);
   #ifdef TOBA_DEBUG
-  Serial << F("WOCO.AnalyzeCommandData() result=") << WOCO::GetResultText (result) << endl;
+  if (m_pLogStream != nullptr)
+    *m_pLogStream << F("WOCO.AnalyzeCommandData() result=") << WOCO::GetResultText (result) << endl;
   #endif
 
   m_ReplyData.pPayloadBuffer->Clear ();
   #ifdef TOBA_DEBUG
-  Serial << F("PayloadRecvBuffer:") << endl;
-  m_pPayloadRecvBuffer->Print (&Serial, true);
+  if (m_pLogStream != nullptr)
+  {
+    *m_pLogStream << F("PayloadRecvBuffer:") << endl;
+    m_pPayloadRecvBuffer->Print (m_pLogStream, true);
+  }
   #endif
 
   if (result != ::EResult::SUCCESS)
@@ -157,7 +161,8 @@ TOBAControllerConfig* TOBAController::get_Config ()
   }
 
   #ifdef TOBA_DEBUG
-  Serial << F("Command Reply is valid.") << endl;
+  if (m_pLogStream != nullptr)
+    *m_pLogStream << F("Command Reply is valid.") << endl;
   #endif
   o_pWORE = pWORE;
 
@@ -195,9 +200,12 @@ void TOBAController::ClearReqRep ()
   EResult result = i_pWOCO->ComposeCommandData (requestData.pPayloadBuffer,
                                                 requestData.PayloadLength);
   #ifdef TOBA_DEBUG
-  Serial << F("WOCO.ComposeCommandData() result=") << WOCO::GetResultText (result) << endl;
-  Serial << F("PayloadSendBuffer:") << endl;
-  m_pPayloadSendBuffer->Print (&Serial, true);
+  if (m_pLogStream != nullptr)
+  {
+    *m_pLogStream << F("WOCO.ComposeCommandData() result=") << WOCO::GetResultText (result) << endl;
+    *m_pLogStream << F("PayloadSendBuffer:") << endl;
+    m_pPayloadSendBuffer->Print (m_pLogStream, true);
+  }
   #endif
   if (result != ::EResult::SUCCESS)
     return result;
@@ -220,9 +228,12 @@ void TOBAController::ClearReqRep ()
                                               requestMessageLength);
 
   #ifdef TOBA_DEBUG
-  Serial << F("UCOP.ComposeRequest() result=") << UCOP::GetResultText (result) << endl;
-  Serial << F("SendBuffer: bytes used = ") << requestMessageLength << endl;
-  m_pSendBuffer->Print (&Serial, true);
+  if (m_pLogStream != nullptr)
+  {
+    *m_pLogStream << F("UCOP.ComposeRequest() result=") << UCOP::GetResultText (result) << endl;
+    *m_pLogStream << F("SendBuffer: bytes used = ") << requestMessageLength << endl;
+    m_pSendBuffer->Print (m_pLogStream, true);
+  }
   #endif
 
   if (result == ::EResult::SUCCESS)

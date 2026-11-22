@@ -67,9 +67,9 @@ TOBADevice::EDeviceType TOBAWorkerConfig::get_DeviceType ()
 }
 
 //--------------------------------------------------------------------
-void TOBAWorkerConfig::Print_EXEC ()
+void TOBAWorkerConfig::Print_EXEC (Stream* i_pOutput)
 {
-  TOBADeviceConfig::Print_EXEC ();
+  TOBADeviceConfig::Print_EXEC (i_pOutput);
 }
 
 //--------------------------------------------------------------------

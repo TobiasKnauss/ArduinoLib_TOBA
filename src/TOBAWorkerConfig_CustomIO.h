@@ -66,7 +66,7 @@ public:
 protected:
   //-------------------- instance --------------------
 
-  virtual void Print_EXEC () override;
+  virtual void Print_EXEC (Stream* i_pOutput) override;
 
   virtual ::EResult ReadFromEEPROM_EXEC (uint16_t& io_Address) override;
 

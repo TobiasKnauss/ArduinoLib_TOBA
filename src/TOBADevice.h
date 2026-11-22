@@ -36,6 +36,7 @@ protected:
 
   //-------------------- instance --------------------
 
+  Stream*     m_pLogStream  = nullptr;
   Stream*     m_pCommStream = nullptr;
   UCOPConfig* m_pUCOPConfig = nullptr;
   UCOP*       m_pUCOP = nullptr;  // Universal Communication Protocol
@@ -97,6 +98,8 @@ public:
   uint8_t get_DeviceNameLength ();
 
   virtual EDeviceType get_DeviceType ();
+
+  void set_DebugOutput (Stream* i_pLogStream);
 
 //==================== Public Methods ====================
 public:

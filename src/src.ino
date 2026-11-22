@@ -41,6 +41,7 @@ void setup ()
   Serial.println (TOBA::GetResultText (result));
 
   result = TOBADeviceConfig::Create (0, m_pTOBADeviceConfig);
+  m_pTOBADeviceConfig->Print (&Serial);
 
   char workerName[] = "W1";
   result = TOBAWorkerConfig::Create (80, 50, 20, workerName, strlen (workerName), 0, m_pTOBAWorkerConfig);

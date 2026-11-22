@@ -140,9 +140,13 @@ uint8_t TOBADeviceConfig::get_DeviceNameLength ()
 }
 
 //--------------------------------------------------------------------
-void TOBADeviceConfig::Print ()
+bool TOBADeviceConfig::Print (Stream* i_pOutput)
 {
-  Print_EXEC ();
+  if (i_pOutput == nullptr)
+    return false;
+
+  Print_EXEC (i_pOutput);
+  return true;
 }
 
 //--------------------------------------------------------------------
@@ -172,13 +176,13 @@ void TOBADeviceConfig::Print ()
 }
 
 //--------------------------------------------------------------------
-void TOBADeviceConfig::Print_EXEC ()
+void TOBADeviceConfig::Print_EXEC (Stream* i_pOutput)
 {
-  Serial << F("ReceiveBufferSize        = ") << m_ReceiveBufferSize << endl;
-  Serial << F("SendBufferSize           = ") << m_SendBufferSize << endl;
-  Serial << F("PayloadBuffersSize       = ") << m_PayloadBuffersSize << endl;
-  Serial << F("DeviceName               = ") << _BYTES (m_DeviceName, strnlen (m_DeviceName, sizeof (m_DeviceName))) << endl;
-  Serial << F("EepromAddress_UCOPConfig = ") << m_EepromAddress_UCOPConfig << endl;
+  *i_pOutput << F("ReceiveBufferSize        = ") << m_ReceiveBufferSize << endl;
+  *i_pOutput << F("SendBufferSize           = ") << m_SendBufferSize << endl;
+  *i_pOutput << F("PayloadBuffersSize       = ") << m_PayloadBuffersSize << endl;
+  *i_pOutput << F("DeviceName               = ") << _BYTES (m_DeviceName, strnlen (m_DeviceName, sizeof (m_DeviceName))) << endl;
+  *i_pOutput << F("EepromAddress_UCOPConfig = ") << m_EepromAddress_UCOPConfig << endl;
 }
 
 //--------------------------------------------------------------------

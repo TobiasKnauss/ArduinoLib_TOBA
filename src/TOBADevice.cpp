@@ -127,6 +127,12 @@ TOBADevice::EDeviceType TOBADevice::get_DeviceType ()
 }
 
 //--------------------------------------------------------------------
+void TOBADevice::set_DebugOutput (Stream* i_pLogStream)
+{
+  m_pLogStream = i_pLogStream;
+}
+
+//--------------------------------------------------------------------
 void TOBADevice::Clear ()
 {
   ClearBuffers ();
@@ -157,7 +163,8 @@ uint32_t TOBADevice::GetTimestamp ()
     return ::EResult::SUCCESS;
 
   #ifdef TOBA_DEBUG
-  Serial << F("CommStream available: ") << m_pCommStream->available () << endl;
+  if (m_pLogStream != nullptr)
+    *m_pLogStream << F("CommStream available: ") << m_pCommStream->available () << endl;
   #endif
 
   // Receive all available data
@@ -167,8 +174,11 @@ uint32_t TOBADevice::GetTimestamp ()
   }
 
   #ifdef TOBA_DEBUG
-  Serial << F("ReceiveBuffer: position = ") << m_pReceiveBuffer->get_CurrentWriteAddress () << endl;
-  m_pReceiveBuffer->Print (&Serial, true);
+  if (m_pLogStream != nullptr)
+  {
+    *m_pLogStream << F("ReceiveBuffer: position = ") << m_pReceiveBuffer->get_CurrentWriteAddress () << endl;
+    m_pReceiveBuffer->Print (m_pLogStream, true);
+  }
   #endif
 
   m_DataAvailable = true;
@@ -186,7 +196,8 @@ uint32_t TOBADevice::GetTimestamp ()
     UCOPConfig* pUCOPConfig = nullptr;
     result = UCOPConfig::Create (m_pConfig->get_EepromAddress_UCOPConfig (), pUCOPConfig);
     #ifdef TOBA_DEBUG
-    Serial << F("UCOPConfig.Create() result=") << UCOP::GetResultText (result) << endl;
+    if (m_pLogStream != nullptr)
+      *m_pLogStream << F("UCOPConfig.Create() result=") << UCOP::GetResultText (result) << endl;
     #endif
     if (result != ::EResult::SUCCESS)
       return result;
@@ -194,7 +205,8 @@ uint32_t TOBADevice::GetTimestamp ()
     UCOP* pUCOP = nullptr;
     result = UCOP::Create (pUCOPConfig, pUCOP);;
     #ifdef TOBA_DEBUG
-    Serial << F("UCOP.Create() result=") << UCOP::GetResultText (result) << endl;
+    if (m_pLogStream != nullptr)
+      *m_pLogStream << F("UCOP.Create() result=") << UCOP::GetResultText (result) << endl;
     #endif
     if (result != ::EResult::SUCCESS)
     {
@@ -214,14 +226,17 @@ uint32_t TOBADevice::GetTimestamp ()
   if (!BytesBuffer::Create (m_pConfig->get_PayloadBuffersSize (), c_BufferDefaultValue, false, m_pPayloadSendBuffer)) return ::EResult::FAIL_Buffer_Create;
 
   #ifdef TOBA_DEBUG
-  Serial << F("ReceiveBuffer     Len = ") << _WIDTH (m_pReceiveBuffer    ->get_Length (), 5) << ":  ";
-  m_pReceiveBuffer->Print (&Serial, true);
-  Serial << F("SendBuffer        Len = ") << _WIDTH (m_pSendBuffer       ->get_Length (), 5) << ":  ";
-  m_pSendBuffer->Print (&Serial, true);
-  Serial << F("PayloadRecvBuffer Len = ") << _WIDTH (m_pPayloadRecvBuffer->get_Length (), 5) << ":  ";
-  m_pPayloadRecvBuffer->Print (&Serial, true);
-  Serial << F("PayloadSendBuffer Len = ") << _WIDTH (m_pPayloadSendBuffer->get_Length (), 5) << ":  ";
-  m_pPayloadSendBuffer->Print (&Serial, true);
+  if (m_pLogStream != nullptr)
+  {
+    *m_pLogStream << F("ReceiveBuffer     Len = ") << _WIDTH (m_pReceiveBuffer    ->get_Length (), 5) << ":  ";
+    m_pReceiveBuffer->Print (m_pLogStream, true);
+    *m_pLogStream << F("SendBuffer        Len = ") << _WIDTH (m_pSendBuffer       ->get_Length (), 5) << ":  ";
+    m_pSendBuffer->Print (m_pLogStream, true);
+    *m_pLogStream << F("PayloadRecvBuffer Len = ") << _WIDTH (m_pPayloadRecvBuffer->get_Length (), 5) << ":  ";
+    m_pPayloadRecvBuffer->Print (m_pLogStream, true);
+    *m_pLogStream << F("PayloadSendBuffer Len = ") << _WIDTH (m_pPayloadSendBuffer->get_Length (), 5) << ":  ";
+    m_pPayloadSendBuffer->Print (m_pLogStream, true);
+  }
   #endif
 
   return ::EResult::SUCCESS;
