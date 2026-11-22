@@ -11,6 +11,9 @@
 
 const uint16_t c_Sleep_ms = 1000;
 
+const uint8_t  c_PinNumber_SendEnable     = 10;
+const uint8_t  c_PinNumber_ReceiveDisable = 22;
+
 const uint16_t c_EepromAddr_TOBADeviceConfig = 16;
 
 WOCO* m_pWOCO = nullptr;
@@ -26,11 +29,28 @@ uint32_t loopExec = 0;
 //--------------------------------------------------------------------
 void setup ()
 {
+  // MCU startup signal
+  int pinNumber_LED = 9;
+  pinMode (pinNumber_LED, OUTPUT);
+  for (int blink = 0; blink < 5; blink++)
+  {
+    digitalWrite (pinNumber_LED, 1);
+    delay (100);
+    digitalWrite (pinNumber_LED, 0);
+    delay (500);
+  }
+
+  // start of main program
   EResult result;
 
   Serial.begin (115200);
   Serial1.begin (9600);
   delay (2000);
+
+  pinMode (c_PinNumber_SendEnable,     OUTPUT);
+  pinMode (c_PinNumber_ReceiveDisable, OUTPUT);
+  digitalWrite (c_PinNumber_SendEnable,     LOW);
+  digitalWrite (c_PinNumber_ReceiveDisable, LOW);
 
   bool isOK = BytesBuffer::Create (20, 0xFF, false, m_pCommandBuffer);
   Serial << F("ByteBuffer.Create(): ") << isOK << endl;
@@ -84,10 +104,19 @@ void loop ()
   if (m_pWOCO == nullptr
   &&  m_IsCommandComplete)
   {
-    m_pCommandBuffer->SetWritePointer (0);
-    m_pCommandBuffer->SetReadPointer (0);
+    m_IsCommandComplete = false;
+
     Serial << loopExec << F(": CommandBuffer: bytes used = ") << m_pCommandBuffer->get_CurrentWriteAddress () << endl;
     m_pCommandBuffer->Print (&Serial, true);
+
+    m_pCommandBuffer->SetWritePointer (0);
+    m_pCommandBuffer->SetReadPointer (0);
+
+    // Command:  WWWWCCAxxxx
+    // WWWW = Worker Device ID (4 bytes)
+    // CC   = Command Number (2 bytes)
+    // A    = Action (1 byte)
+    // xxxx = optional command-specific parameters
 
     uint32_t workerDeviceId     = 0;
     uint16_t wocoCommandNum     = 0;
@@ -99,7 +128,7 @@ void loop ()
         isOK &= m_pCommandBuffer->ReadValueAndMovePtr (wocoCommandNum, true);
         isOK &= m_pCommandBuffer->ReadValueAndMovePtr (wocoActionIsWrite);
     WOCO::ECommand wocoCommand = (WOCO::ECommand)wocoCommandNum;
-    Serial << loopExec << F(": CommandBuffer.ReadValueAndMovePtr() ") << isOK << ", WOCO: " << wocoCommandNum << endl;
+    Serial << loopExec << F(": CommandBuffer.ReadValueAndMovePtr() ") << (isOK ? "OK" : "FAIL") << ", WOCO Cmd Num: " << wocoCommandNum << endl;
 
     switch (wocoCommand)
     {
@@ -159,8 +188,14 @@ void loop ()
       // Send the request.
       if (m_pTOBAController->get_ExistsRequest ())
       {
+        digitalWrite (c_PinNumber_ReceiveDisable, HIGH);
+        digitalWrite (c_PinNumber_SendEnable,     HIGH);
+
         result = m_pTOBAController->SendRequest ();
         Serial << loopExec << F(": SendRequest(): ") << TOBA::GetResultText (result) << endl;
+
+        digitalWrite (c_PinNumber_SendEnable, LOW);
+        digitalWrite (c_PinNumber_ReceiveDisable, LOW);
       }
     }
   }

@@ -133,14 +133,14 @@ bool TOBAWorker::get_IsWorking ()
   {
     // Message is faulty. Do not process it, but send a failure reply.
     #ifdef TOBA_DEBUG
-    Serial << F("Message is faulty. Creating failure reply.");
+    Serial << F("Message is faulty. Creating failure reply.") << endl;
     #endif
     m_ReplyData = UCOPData::CreateReplyData (receivedData, GetTimestamp (), messageResult);
     return result;
   }
 
   #ifdef TOBA_DEBUG
-  Serial << F("Message is a request.");
+  Serial << F("Message is a request.") << endl;
   #endif
   m_RequestData = receivedData;
 
@@ -177,8 +177,8 @@ bool TOBAWorker::get_IsWorking ()
     return result;
   }
 
-  result = m_pWOCO->AnalyzeCommandData (m_RequestData.pPayloadBuffer,
-                                        m_RequestData.PayloadLength);
+  result = pWOCO->AnalyzeCommandData (m_RequestData.pPayloadBuffer,
+                                      m_RequestData.PayloadLength);
   #ifdef TOBA_DEBUG
   Serial << F("WOCO.AnalyzeCommandData() result=") << WOCO::GetResultText (result) << endl;
   #endif
@@ -199,7 +199,7 @@ bool TOBAWorker::get_IsWorking ()
   }
 
   #ifdef TOBA_DEBUG
-  Serial << F("Command is valid. Start working...");
+  Serial << F("Command is valid. Start working...") << endl;
   #endif
   m_pWOCO = pWOCO;
 

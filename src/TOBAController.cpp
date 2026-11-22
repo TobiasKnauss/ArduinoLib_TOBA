@@ -136,8 +136,8 @@ TOBAControllerConfig* TOBAController::get_Config ()
     return result;
   }
 
-  result = m_pWOCO->AnalyzeCommandData (m_RequestData.pPayloadBuffer,
-                                        m_RequestData.PayloadLength);
+  result = pWORE->AnalyzeCommandData (m_RequestData.pPayloadBuffer,
+                                      m_RequestData.PayloadLength);
   #ifdef TOBA_DEBUG
   Serial << F("WOCO.AnalyzeCommandData() result=") << WOCO::GetResultText (result) << endl;
   #endif
@@ -157,7 +157,7 @@ TOBAControllerConfig* TOBAController::get_Config ()
   }
 
   #ifdef TOBA_DEBUG
-  Serial << F("Command Reply is valid.");
+  Serial << F("Command Reply is valid.") << endl;
   #endif
   o_pWORE = pWORE;
 

@@ -6,6 +6,9 @@
 
 const uint16_t c_Sleep_ms = 1000;
 
+const uint8_t  c_PinNumber_SendEnable     = 10;
+const uint8_t  c_PinNumber_ReceiveDisable = 22;
+
 const uint16_t c_EepromAddr_TOBADeviceConfig = 16;
 
 TOBADeviceConfig* m_pTOBADeviceConfig = nullptr;
@@ -21,6 +24,11 @@ void setup ()
   Serial.begin (115200);
   Serial1.begin (9600);
   delay (2000);
+
+  pinMode (c_PinNumber_SendEnable,     OUTPUT);
+  pinMode (c_PinNumber_ReceiveDisable, OUTPUT);
+  digitalWrite (c_PinNumber_SendEnable,     LOW);
+  digitalWrite (c_PinNumber_ReceiveDisable, LOW);
 
   result = TOBADeviceConfig::Create (c_EepromAddr_TOBADeviceConfig, m_pTOBADeviceConfig);
   Serial << F("TOBADeviceConfig.Create(): ") << (int)result << " = " << TOBA::GetResultText (result) << endl;
@@ -83,8 +91,14 @@ void loop ()
   // It usually is sufficient to check if a reply exists, because one was only created if the worker has finished or a failure happened.
   if (m_pTOBAWorker->get_ExistsReply ())
   {
+    digitalWrite (c_PinNumber_ReceiveDisable, HIGH);
+    digitalWrite (c_PinNumber_SendEnable,     HIGH);
+
     result = m_pTOBAWorker->SendReply ();
     Serial << loopExec << F(": SendReply(): ") << TOBA::GetResultText (result) << endl;
+
+    digitalWrite (c_PinNumber_SendEnable, LOW);
+    digitalWrite (c_PinNumber_ReceiveDisable, LOW);
   }
 
   Serial << loopExec << F(": Sleeping ") << c_Sleep_ms << " ms." << endl << endl;
