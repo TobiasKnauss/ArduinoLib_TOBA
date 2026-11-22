@@ -136,8 +136,8 @@ TOBAControllerConfig* TOBAController::get_Config ()
     return result;
   }
 
-  result = pWORE->AnalyzeCommandData (m_RequestData.pPayloadBuffer,
-                                      m_RequestData.PayloadLength);
+  result = pWORE->AnalyzeCommandData (m_ReplyData.pPayloadBuffer,
+                                      m_ReplyData.PayloadLength);
   #ifdef TOBA_DEBUG
   if (m_pLogStream != nullptr)
     *m_pLogStream << F("WOCO.AnalyzeCommandData() result=") << WOCO::GetResultText (result) << endl;
@@ -152,11 +152,12 @@ TOBAControllerConfig* TOBAController::get_Config ()
   }
   #endif
 
+  m_RequestData.Clear ();
+  m_ReplyData  .Clear ();
+
   if (result != ::EResult::SUCCESS)
   {
     DeleteObject (pWORE);
-    m_RequestData.Clear ();
-    m_ReplyData  .Clear ();
     return result;
   }
 
